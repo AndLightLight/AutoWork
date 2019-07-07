@@ -19,6 +19,8 @@ import android.view.accessibility.AccessibilityNodeInfo;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.features2d.KeyPoint;
+
 import java.nio.ByteBuffer;
 import java.util.List;
 
@@ -42,6 +44,13 @@ public class FloatPanelService extends AccessibilityService {
         MatOfDMatch matchesFiltered;
     }
 
+    static class PrepareImage{
+        Mat imageDesMat;
+        KeyPoint[] keyPointsImage;
+    }
+
+    public static FloatPanelService Instance;
+
 
     String TAG = "FloatPanelService";
 
@@ -51,6 +60,7 @@ public class FloatPanelService extends AccessibilityService {
     @Override
     public void onCreate() {
         super.onCreate();
+        Instance = this;
         Intent toA = new Intent(ActionBroadcastName.FloatPanelServiceOnCreate);
         sendBroadcast(toA);
     }

@@ -98,6 +98,7 @@ public class FloatPanel extends BasePanel{
             final Button bt3 = mRoot.findViewById(R.id.button3);
             final Button bt4 = mRoot.findViewById(R.id.button4);
             final Button bt5 = mRoot.findViewById(R.id.button5);
+            final Button bt6 = mRoot.findViewById(R.id.button6);
             final EditText et0 = mRoot.findViewById(R.id.editText0);
             final EditText et1 = mRoot.findViewById(R.id.editText1);
             bt0.setOnClickListener(new View.OnClickListener() {
@@ -147,7 +148,9 @@ public class FloatPanel extends BasePanel{
             bt4.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    boolean result = mFloatPanelService.dispatchGesture(GestureManager.RengQiu(), callback, null);
+                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                        boolean result = mFloatPanelService.dispatchGesture(GestureManager.RengQiu(), callback, null);
+                    }
                 }
             });
             bt1.setOnClickListener(new View.OnClickListener() {
@@ -259,6 +262,27 @@ public class FloatPanel extends BasePanel{
                             break;
                     }
                     return false;
+                }
+            });
+
+            bt6.setOnClickListener(new View.OnClickListener() {
+                boolean mIsStart = false;
+                Thread thread;
+                @Override
+                public void onClick(View v) {
+                    if (mIsStart == false){
+                        thread = new Thread(new Runnable() {
+                            @Override
+                            public void run() {
+                                new ScriptMain().start();
+                            }
+                        });
+                        thread.start();
+                    }
+                    else{
+                        thread.interrupt();
+                    }
+                    mIsStart = mIsStart == false;
                 }
             });
         }

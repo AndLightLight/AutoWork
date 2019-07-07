@@ -14,6 +14,8 @@ import java.util.Date;
 
 public class GestureRecordPanel extends BasePanel{
     static final String TAG = "GestureRecordPanel";
+    StringBuilder mCode = new StringBuilder();
+    StringBuilder mCode2 = new StringBuilder();
 
     public GestureRecordPanel(Context context) {
         super(context);
@@ -21,12 +23,15 @@ public class GestureRecordPanel extends BasePanel{
 
     @Override
     protected void onShow() {
-
+        mCode.setLength(0);
+        mCode2.setLength(0);
+        mCode.append("Sart Record:\n");
+        mCode2.append("Sart Record:\n");
     }
 
     @Override
     protected void onHide() {
-
+        GestureManager.LogLong(TAG, String.valueOf(mCode2));
     }
 
     @Override
@@ -51,29 +56,48 @@ public class GestureRecordPanel extends BasePanel{
 
         mRoot.setOnTouchListener(new View.OnTouchListener() {
             boolean mIsStart = false;
-            StringBuilder mCode = new StringBuilder();
+            boolean mIsFirstMove = true;
             Date mStartDate;
             @Override
             public boolean onTouch(View v, MotionEvent event) {
                 switch (event.getAction()) {
                     case MotionEvent.ACTION_DOWN:
                         mIsStart = true;
+                        mIsFirstMove = true;
+                        mCode.append(String.format(
+                                "\n\n{\n" +
+                                "   Path clickPath = new Path();\nclickPath.moveTo(%ff, %ff);\n",event.getRawX(),event.getRawY()));
+                        if (mStartDate != null){
+                            Date now = new Date();
+                            long diff = now.getTime() - mStartDate.getTime();
+                            mCode2.append(String.format("sleep(%d);\n",diff));
+                        }
+                        mCode2.append(String.format(
+                                "click(new PointF[]{new PointF(%ff,%ff)",event.getRawX(),event.getRawY()));
                         mStartDate = new Date();
-                        mCode.setLength(0);
-                        mCode.append(String.format("\nPath clickPath = new Path();\nclickPath.moveTo(%ff, %ff);\n",event.getRawX(),event.getRawY()));
                         break;
                     case MotionEvent.ACTION_MOVE:
                         if (mIsStart){
-                            mCode.append(String.format("clickPath.lineTo(%ff, %ff);\n",event.getRawX(),event.getRawY()));
+                            mCode.append(String.format("   clickPath.lineTo(%ff, %ff);\n",event.getRawX(),event.getRawY()));
+                            if (!mIsFirstMove)
+                                mCode2.append(String.format(",new PointF(%ff,%ff)",event.getRawX(),event.getRawY()));
+                            mIsFirstMove = false;
                         }
                         break;
                     case MotionEvent.ACTION_UP:
                         mIsStart = false;
                         Date now = new Date();
                         long diff = now.getTime() - mStartDate.getTime();
-                        mCode.append(String.format("GestureDescription.StrokeDescription clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, %d);\n" +
-                                "GestureDescription.Builder clickBuilder = new GestureDescription.Builder();\nclickBuilder.addStroke(clickStroke).build();\n",diff));
-                        GestureManager.LogLong(TAG, String.valueOf(mCode));
+                        mCode.append(String.format(
+                                "   GestureDescription.StrokeDescription clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, %d);\n" +
+                                "   GestureDescription.Builder clickBuilder = new GestureDescription.Builder();\n" +
+                                "   GestureDescription gd = clickBuilder.addStroke(clickStroke).build();\n" +
+                                        "   if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {\n" +
+                                "       boolean result = FloatPanelService.Instance.dispatchGesture(gd, null, null);\n" +
+                                "   }\n" +
+                                        "}\n"
+                                ,diff));
+                        mCode2.append(String.format("},%d);\n",diff));
                         break;
                     default:
                         break;
@@ -85,6 +109,6 @@ public class GestureRecordPanel extends BasePanel{
 
     @Override
     protected void onDestroy() {
-
+        GestureManager.LogLong(TAG, String.valueOf(mCode2));
     }
 }

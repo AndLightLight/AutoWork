@@ -4,6 +4,8 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Point;
+import android.graphics.PointF;
 import android.util.Log;
 
 import org.opencv.android.Utils;
@@ -233,6 +235,125 @@ final public class ToolUtls {
         return segments;
     }
 
+    static FloatPanelService.PrepareImage prepareBitmap(Bitmap image, FeatureDetector fd, DescriptorExtractor extractor){
+        FloatPanelService.PrepareImage preImg = new FloatPanelService.PrepareImage();
+        final MatOfKeyPoint keyPointsImage = new MatOfKeyPoint();
+        Mat imageMat = new Mat();
+        Utils.bitmapToMat(image, imageMat);
+        fd.detect(imageMat, keyPointsImage);
+        Log.d(TAG, "keyPoints.size() : " + keyPointsImage.size());
+        Mat descriptors = new Mat();
+        extractor.compute(imageMat, keyPointsImage, descriptors);
+        preImg.imageDesMat = descriptors;
+        preImg.keyPointsImage = keyPointsImage.toArray();
+        return preImg;
+    }
+
+    static PointF FindPicWithCVMat(FloatPanelService.PrepareImage orcpre,
+                                   FloatPanelService.PrepareImage subpre,
+                                   int featureDetector,
+                                   int descriptorExtractor,
+                                   float similar){
+        PointF re = new PointF();
+
+        FeatureDetector fd = FeatureDetector.create(featureDetector);
+        DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
+        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
+
+        Log.d(TAG, "descriptorsA.size() : " + orcpre.imageDesMat.size());
+        Log.d(TAG, "descriptorsB.size() : " + subpre.imageDesMat.size());
+
+        MatOfDMatch matches = new MatOfDMatch();
+
+
+        if ((subpre.imageDesMat.size().width + subpre.imageDesMat.size().height) <= 0 || (orcpre.imageDesMat.size().width + orcpre.imageDesMat.size().height) <= 0)
+            return re;
+
+        matcher.match(orcpre.imageDesMat, subpre.imageDesMat, matches);
+
+        Log.d(TAG, "matches.size() : " + matches.size());
+
+        List<DMatch> matchesList = matches.toList();
+        List<DMatch> bestMatches = new ArrayList<DMatch>();
+
+        Double max_dist = 0.0;
+        Double min_dist = 100.0;
+        int min_idx = -100;
+        for (int i = 0; i < matchesList.size(); i++) {
+            Double dist = (double) matchesList.get(i).distance;
+
+            if (dist < min_dist && dist != 0) {
+                min_idx = i;
+                min_dist = dist;
+            }
+
+            if (dist > max_dist) {
+                max_dist = dist;
+            }
+
+        }
+
+        Log.d(TAG, "max_dist : " + max_dist);
+        Log.d(TAG, "min_dist : " + min_dist);
+
+        if (min_dist > 50) {
+            Log.d(TAG, "No match found");
+            Log.d(TAG, "Just return ");
+            return re;
+        }
+
+        double threshold = 3 * min_dist;
+        double threshold2 = 2 * min_dist;
+
+        if (threshold > 75) {
+            threshold = 75;
+        } else if (threshold2 >= max_dist) {
+            threshold = min_dist * 1.1;
+        } else if (threshold >= max_dist) {
+            threshold = threshold2 * 1.4;
+        }
+
+        Log.d(TAG, "Threshold : " + threshold);
+
+        ArrayList<DMatch> sortList = new ArrayList<>();
+
+        for (int i = 0; i < matchesList.size(); i++) {
+            DMatch dm = matchesList.get(i);
+            Double dist = (double) dm.distance;
+
+            if (dist < threshold) {
+                bestMatches.add(dm);
+                sortList.add(dm);
+                Log.d(TAG,String.format(i + " best match added : %s", dist));
+            }
+        }
+
+        sortList.sort(new Comparator<DMatch>() {
+            @Override
+            public int compare(DMatch o1, DMatch o2) {
+                return o1.distance > o2.distance? 1: (o1.distance == o2.distance?0:-1);
+            }
+        });
+
+        sortList = (ArrayList<DMatch>) sortList.subList(0,3);
+
+        Log.d(TAG, "sortList.size() : " + sortList.size());
+
+        int need = (int)(4.0f*similar);
+        if (sortList.size() >= need) {
+            Log.d(TAG, "match found");
+            for (DMatch dm : sortList){
+                org.opencv.core.Point p = orcpre.keyPointsImage[dm.queryIdx].pt;
+                re.offset((float) p.x,(float) p.y);
+            }
+            re.x /= sortList.size();
+            re.y /= sortList.size();
+            return re;
+        } else {
+            return re;
+        }
+    }
+
     static boolean findSubImageWithCV(Bitmap orcimage,
                                Bitmap subimage,
                                int featureDetector,
@@ -240,6 +361,8 @@ final public class ToolUtls {
                                FloatPanelService.MatchResult outResult
     ) {
         FeatureDetector fd = FeatureDetector.create(featureDetector);
+        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
+        DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
         final MatOfKeyPoint keyPointsLarge = new MatOfKeyPoint();
         final MatOfKeyPoint keyPointsSmall = new MatOfKeyPoint();
 
@@ -273,7 +396,6 @@ final public class ToolUtls {
 //        ORB下：
 //        public static final int ORB = 3;
 //        public static final int BRIEF = 4;
-        DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
         extractor.compute(largeImage, keyPointsLarge, descriptorsLarge);
         extractor.compute(smallImage, keyPointsSmall, descriptorsSmall);
 
@@ -282,7 +404,6 @@ final public class ToolUtls {
 
         MatOfDMatch matches = new MatOfDMatch();
 
-        DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
         if ((descriptorsSmall.size().width + descriptorsSmall.size().height) <= 0 || (descriptorsLarge.size().width + descriptorsLarge.size().height) <= 0)
             return false;

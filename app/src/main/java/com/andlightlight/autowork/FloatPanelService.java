@@ -4,6 +4,7 @@ import android.accessibilityservice.AccessibilityService;
 import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
+import android.graphics.PointF;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -42,11 +43,14 @@ public class FloatPanelService extends AccessibilityService {
         MatOfKeyPoint keyPointsLarge;
         MatOfKeyPoint keyPointsSmall;
         MatOfDMatch matchesFiltered;
+        PointF rePoint = new PointF();
     }
 
     static class PrepareImage{
+        Mat imageMat;
         Mat imageDesMat;
-        KeyPoint[] keyPointsImage;
+        MatOfKeyPoint keyPointsMat;
+        KeyPoint[] keyPoints;
     }
 
     public static FloatPanelService Instance;

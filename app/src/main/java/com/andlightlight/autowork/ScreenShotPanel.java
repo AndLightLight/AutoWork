@@ -35,6 +35,11 @@ public class ScreenShotPanel extends BasePanel {
     protected void onShow() {
         if (mRoot != null)
             mRoot.setAlpha(ALPHA);
+        mLayoutParams.width = START_WIDTH;
+        mLayoutParams.height = START_HEIGHT;
+        mLayoutParams.x = START_X;
+        mLayoutParams.y = START_Y;
+        mWindowManager.updateViewLayout(mRoot,mLayoutParams);
     }
 
     @Override

@@ -30,6 +30,7 @@ public class FloatPanel extends BasePanel{
     static final String TAG = "FloatPanel";
 
     String mSaveFilePath;
+    String mSaveFileName = "ScreenShot";
 
     FloatPanelService mFloatPanelService;
 
@@ -40,10 +41,12 @@ public class FloatPanel extends BasePanel{
     static final int OVER_PANEL_COMPARE_WIDTH = 900;
     static final int OVER_PANEL_COMPARE_HEIGHT = 1600;
 
+    public static FloatPanel Instance;
+
     public FloatPanel(Context context) {
         super(context);
         mFloatPanelService = (FloatPanelService) context;
-        mSaveFilePath = mFloatPanelService.getExternalFilesDir(null) + "/" + "test1.png";
+        Instance = this;
     }
 
     // callback invoked either when the gesture has been completed or cancelled
@@ -60,6 +63,11 @@ public class FloatPanel extends BasePanel{
             Log.d(TAG, "gesture cancelled");
         }
     };
+
+    public String getSaveFilePath(){
+        final EditText et6 = mRoot.findViewById(R.id.editText6);
+        return mSaveFilePath = mFloatPanelService.getExternalFilesDir(null) + "/" + et6.getText().toString() + ".png";
+    }
 
     @Override
     protected void onShow() {
@@ -101,6 +109,10 @@ public class FloatPanel extends BasePanel{
             final Button bt6 = mRoot.findViewById(R.id.button6);
             final EditText et0 = mRoot.findViewById(R.id.editText0);
             final EditText et1 = mRoot.findViewById(R.id.editText1);
+            final EditText et2 = mRoot.findViewById(R.id.editText2);
+            final EditText et3 = mRoot.findViewById(R.id.editText3);
+            final EditText et4 = mRoot.findViewById(R.id.editText4);
+            final EditText et5 = mRoot.findViewById(R.id.editText5);
             bt0.setOnClickListener(new View.OnClickListener() {
                 boolean isOpen = true;
 
@@ -177,20 +189,29 @@ public class FloatPanel extends BasePanel{
 //                    timer.schedule(task,strToDateLong("2019-05-15 20:00:00"));
 
                     if (mIsCompare) {
-                        Bitmap subimage = ToolUtls.getBitmapFromPath(mSaveFilePath);
+                        Bitmap subimage = ToolUtls.getBitmapFromPath(getSaveFilePath());
                         subimage = ToolUtls.scaleBitmap(subimage, 1f / mFloatPanelService.GetImageScale());
                         Bitmap bitmap = mFloatPanelService.snapshotScreen();
+
                         try {
                             int featureDetector = FeatureDetector.FAST;
-                            int descriptorExtractor = DescriptorExtractor.ORB;
+                            int descriptorExtractor = DescriptorExtractor.BRIEF;
+                            int findLeft = -1;
+                            int findTop = -1;
+                            int findRight = -1;
+                            int findBottom = -1;
                             try {
-                                featureDetector = Integer.parseInt(et0.getText().toString());
-                                descriptorExtractor = Integer.parseInt(et1.getText().toString());
+                                featureDetector = Integer.parseInt(et4.getText().toString());
+                                descriptorExtractor = Integer.parseInt(et5.getText().toString());
+                                findLeft = Integer.parseInt(et0.getText().toString());
+                                findTop = Integer.parseInt(et1.getText().toString());
+                                findRight = Integer.parseInt(et2.getText().toString());
+                                findBottom = Integer.parseInt(et3.getText().toString());
                             } finally {
-                                FloatPanelService.MatchResult mr = new FloatPanelService.MatchResult();
-                                boolean find = ToolUtls.findSubImageWithCV(bitmap, subimage, featureDetector, descriptorExtractor, mr);
-
-
+                                if (findLeft >= 0 && findTop >= 0 && findRight >= 0 && findBottom >= 0){
+                                    bitmap = ToolUtls.cropBitmap(bitmap,findLeft,findTop,findRight - findLeft,findBottom - findTop);
+                                }
+                                FloatPanelService.MatchResult mr = ToolUtls.findSubImageWithCV(bitmap, subimage, featureDetector, descriptorExtractor, 0.9f);
                                 Mat largeImageRgb = new Mat();
                                 Mat smallImageRgb = new Mat();
                                 Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
@@ -231,7 +252,7 @@ public class FloatPanel extends BasePanel{
                     if (!mIsJieTu)
                         mPanel.show();
                     else
-                        mPanel.screenShot(mSaveFilePath);
+                        mPanel.screenShot(getSaveFilePath());
                     mIsJieTu = mIsJieTu == false;
                 }
             });

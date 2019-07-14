@@ -4,7 +4,6 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Point;
 import android.graphics.PointF;
 import android.util.Log;
 
@@ -244,20 +243,37 @@ final public class ToolUtls {
         Log.d(TAG, "keyPoints.size() : " + keyPointsImage.size());
         Mat descriptors = new Mat();
         extractor.compute(imageMat, keyPointsImage, descriptors);
+        preImg.imageMat = imageMat;
         preImg.imageDesMat = descriptors;
-        preImg.keyPointsImage = keyPointsImage.toArray();
+        preImg.keyPointsMat = keyPointsImage;
+        preImg.keyPoints = keyPointsImage.toArray();
         return preImg;
     }
+//        能用的FD：
+//        public static final int FAST = 1 - >3;
+//        public static final int STAR = 2 - >3;
+//        public static final int ORB = 5;
+//        public static final int MSER = 6;
+//        public static final int GFTT = 7;
+//        public static final int HARRIS = 8;
+//        public static final int SIMPLEBLOB = 9;
+//        public static final int DENSE = 10;
+//        public static final int BRISK = 11;
+//        能用的DE：
+//        public static final int ORB = 3;
+//        public static final int BRIEF = 4;
+//        推荐使用排名：
+//        1 - >4
+//        1 - >3
+//        10 - >4
+//        5 - >3
+    static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
+                                     FloatPanelService.PrepareImage subpre,
+                                     FeatureDetector fd,
+                                     DescriptorExtractor extractor,
+                                     float similar){
 
-    static PointF FindPicWithCVMat(FloatPanelService.PrepareImage orcpre,
-                                   FloatPanelService.PrepareImage subpre,
-                                   int featureDetector,
-                                   int descriptorExtractor,
-                                   float similar){
-        PointF re = new PointF();
-
-        FeatureDetector fd = FeatureDetector.create(featureDetector);
-        DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
+        FloatPanelService.MatchResult re = new FloatPanelService.MatchResult();
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
         Log.d(TAG, "descriptorsA.size() : " + orcpre.imageDesMat.size());
@@ -302,16 +318,17 @@ final public class ToolUtls {
             return re;
         }
 
-        double threshold = 3 * min_dist;
-        double threshold2 = 2 * min_dist;
+        double threshold = 15 + (1-similar)*50;
+//        double threshold = 3 * min_dist;
+//        double threshold2 = 2 * min_dist;
 
-        if (threshold > 75) {
-            threshold = 75;
-        } else if (threshold2 >= max_dist) {
-            threshold = min_dist * 1.1;
-        } else if (threshold >= max_dist) {
-            threshold = threshold2 * 1.4;
-        }
+//        if (threshold > 75) {
+//            threshold = 75;
+//        } else if (threshold2 >= max_dist) {
+//            threshold = min_dist * 1.1;
+//        } else if (threshold >= max_dist) {
+//            threshold = threshold2 * 1.4;
+//        }
 
         Log.d(TAG, "Threshold : " + threshold);
 
@@ -335,164 +352,61 @@ final public class ToolUtls {
             }
         });
 
-        sortList = (ArrayList<DMatch>) sortList.subList(0,3);
+        sortList = new ArrayList<>(sortList.subList(0,sortList.size()>=4?4:sortList.size()));
+
+        MatOfDMatch matchesFiltered = new MatOfDMatch();
+
+        matchesFiltered.fromList(sortList);
+
+        Log.d(TAG, "matchesFiltered.size() : " + matchesFiltered.size());
+
+        re.largeImage = orcpre.imageMat;
+        re.smallImage = subpre.imageMat;
+        re.keyPointsLarge = orcpre.keyPointsMat;
+        re.keyPointsSmall = subpre.keyPointsMat;
+        re.matchesFiltered = matchesFiltered;
 
         Log.d(TAG, "sortList.size() : " + sortList.size());
 
-        int need = (int)(4.0f*similar);
+        int need = 4;
         if (sortList.size() >= need) {
             Log.d(TAG, "match found");
             for (DMatch dm : sortList){
-                org.opencv.core.Point p = orcpre.keyPointsImage[dm.queryIdx].pt;
-                re.offset((float) p.x,(float) p.y);
+                org.opencv.core.Point p = orcpre.keyPoints[dm.queryIdx].pt;
+                re.rePoint.offset((float) p.x,(float) p.y);
             }
-            re.x /= sortList.size();
-            re.y /= sortList.size();
+            re.rePoint.x /= sortList.size();
+            re.rePoint.y /= sortList.size();
             return re;
         } else {
             return re;
         }
     }
 
-    static boolean findSubImageWithCV(Bitmap orcimage,
-                               Bitmap subimage,
-                               int featureDetector,
-                               int descriptorExtractor,
-                               FloatPanelService.MatchResult outResult
+    static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
+                                   FloatPanelService.PrepareImage subpre,
+                                   int featureDetector,
+                                   int descriptorExtractor,
+                                   float similar){
+
+        FeatureDetector fd = FeatureDetector.create(featureDetector);
+        DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
+        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar);
+    }
+
+    static FloatPanelService.MatchResult findSubImageWithCV(Bitmap orcimage,
+                                                            Bitmap subimage,
+                                                            int featureDetector,
+                                                            int descriptorExtractor,
+                                                            float similar
     ) {
         FeatureDetector fd = FeatureDetector.create(featureDetector);
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
         DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
-        final MatOfKeyPoint keyPointsLarge = new MatOfKeyPoint();
-        final MatOfKeyPoint keyPointsSmall = new MatOfKeyPoint();
 
-        Mat largeImage = new Mat();
-        Utils.bitmapToMat(orcimage, largeImage);
-        Mat smallImage = new Mat();
-        Utils.bitmapToMat(subimage, smallImage);
-
-        fd.detect(largeImage, keyPointsLarge);
-        fd.detect(smallImage, keyPointsSmall);
-
-        Log.d(TAG, "keyPoints.size() : " + keyPointsLarge.size());
-        Log.d(TAG, "keyPoints2.size() : " + keyPointsSmall.size());
-
-        Mat descriptorsLarge = new Mat();
-        Mat descriptorsSmall = new Mat();
-
-//        public static final int FAST = 1;
-//        public static final int STAR = 2;
-//        public static final int SIFT = 3;
-//        public static final int SURF = 4;
-//        public static final int ORB = 5;
-//        public static final int MSER = 6;
-//        public static final int GFTT = 7;
-//        public static final int HARRIS = 8;
-//        public static final int SIMPLEBLOB = 9;
-//        public static final int DENSE = 10;
-//        public static final int BRISK = 11;
-
-
-//        ORB下：
-//        public static final int ORB = 3;
-//        public static final int BRIEF = 4;
-        extractor.compute(largeImage, keyPointsLarge, descriptorsLarge);
-        extractor.compute(smallImage, keyPointsSmall, descriptorsSmall);
-
-        Log.d(TAG, "descriptorsA.size() : " + descriptorsLarge.size());
-        Log.d(TAG, "descriptorsB.size() : " + descriptorsSmall.size());
-
-        MatOfDMatch matches = new MatOfDMatch();
-
-
-        if ((descriptorsSmall.size().width + descriptorsSmall.size().height) <= 0 || (descriptorsLarge.size().width + descriptorsLarge.size().height) <= 0)
-            return false;
-
-        matcher.match(descriptorsLarge, descriptorsSmall, matches);
-
-        Log.d(TAG, "matches.size() : " + matches.size());
-
-        MatOfDMatch matchesFiltered = new MatOfDMatch();
-
-        List<DMatch> matchesList = matches.toList();
-        List<DMatch> bestMatches = new ArrayList<DMatch>();
-
-        Double max_dist = 0.0;
-        Double min_dist = 100.0;
-        int min_idx = -100;
-        for (int i = 0; i < matchesList.size(); i++) {
-            Double dist = (double) matchesList.get(i).distance;
-
-            if (dist < min_dist && dist != 0) {
-                min_idx = i;
-                min_dist = dist;
-            }
-
-            if (dist > max_dist) {
-                max_dist = dist;
-            }
-
-        }
-
-        Log.d(TAG, "max_dist : " + max_dist);
-        Log.d(TAG, "min_dist : " + min_dist);
-
-        if (min_dist > 50) {
-            Log.d(TAG, "No match found");
-            Log.d(TAG, "Just return ");
-            return false;
-        }
-
-        double threshold = 3 * min_dist;
-        double threshold2 = 2 * min_dist;
-
-        if (threshold > 75) {
-            threshold = 75;
-        } else if (threshold2 >= max_dist) {
-            threshold = min_dist * 1.1;
-        } else if (threshold >= max_dist) {
-            threshold = threshold2 * 1.4;
-        }
-
-        Log.d(TAG, "Threshold : " + threshold);
-
-        ArrayList<DMatch> sortList = new ArrayList<>();
-
-        for (int i = 0; i < matchesList.size(); i++) {
-            DMatch dm = matchesList.get(i);
-            Double dist = (double) dm.distance;
-
-            if (dist < threshold) {
-                bestMatches.add(dm);
-                sortList.add(dm);
-                Log.d(TAG,String.format(i + " best match added : %s", dist));
-            }
-        }
-
-        sortList.sort(new Comparator<DMatch>() {
-            @Override
-            public int compare(DMatch o1, DMatch o2) {
-                return o1.distance > o2.distance? 1: (o1.distance == o2.distance?0:-1);
-            }
-        });
-
-        matchesFiltered.fromList(sortList.subList(0,3));
-
-        Log.d(TAG, "matchesFiltered.size() : " + matchesFiltered.size());
-
-        outResult.largeImage = largeImage;
-        outResult.smallImage = smallImage;
-        outResult.keyPointsLarge = keyPointsLarge;
-        outResult.keyPointsSmall = keyPointsSmall;
-        outResult.matchesFiltered = matchesFiltered;
-
-
-        if (matchesFiltered.rows() >= 4) {
-            Log.d(TAG, "match found");
-            return true;
-        } else {
-            return false;
-        }
+        FloatPanelService.PrepareImage orcpre = prepareBitmap(orcimage,fd,extractor);
+        FloatPanelService.PrepareImage subpre = prepareBitmap(subimage,fd,extractor);
+        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar);
     }
 
 }

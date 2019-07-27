@@ -25,6 +25,7 @@ public abstract class ScriptInterface {
     protected FeatureDetector mFd = FeatureDetector.create(mFeatureDetector);
     protected DescriptorExtractor mExtractor = DescriptorExtractor.create(mDescriptorExtractor);
     protected Bitmap mScreeShopImageCache;
+    protected int mDefaultNeedNum = 4;
     public void start(){
         mLoadPreImage.clear();
         File dir = new File(FloatPanelService.Instance.getExternalFilesDir(null) + "/");
@@ -93,16 +94,24 @@ public abstract class ScriptInterface {
         return ToolUtls.prepareBitmap(ss,mFd,mExtractor);
     }
 
-    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, FloatPanelService.PrepareImage subpic, int similar){
-        return ToolUtls.findSubImageWithCV(orcpic,subpic,mFd,mExtractor,similar);
+    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, FloatPanelService.PrepareImage subpic, int similar, int needNum){
+        return ToolUtls.findSubImageWithCV(orcpic,subpic,mFd,mExtractor,similar,needNum);
     }
 
     protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, String subpic, float similar){
-        return ToolUtls.findSubImageWithCV(orcpic,mLoadPreImage.get(subpic),mFd,mExtractor,similar);
+        return FindPic(orcpic,subpic,similar,mDefaultNeedNum);
+    }
+
+    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, String subpic, float similar, int needNum){
+        return ToolUtls.findSubImageWithCV(orcpic,mLoadPreImage.get(subpic),mFd,mExtractor,similar,needNum);
     }
 
     protected FloatPanelService.MatchResult FindPic(int left, int top, int right, int down, String subpic, float similar){
-        return ToolUtls.findSubImageWithCV(prepareSnapshotScreen(left,top,right,down),mLoadPreImage.get(subpic),mFd,mExtractor,similar);
+        return FindPic(left, top, right, down, subpic, similar,mDefaultNeedNum);
+    }
+
+    protected FloatPanelService.MatchResult FindPic(int left, int top, int right, int down, String subpic, float similar, int needNum){
+        return ToolUtls.findSubImageWithCV(prepareSnapshotScreen(left,top,right,down),mLoadPreImage.get(subpic),mFd,mExtractor,similar,needNum);
     }
     protected abstract void startImp() throws InterruptedException;
 }

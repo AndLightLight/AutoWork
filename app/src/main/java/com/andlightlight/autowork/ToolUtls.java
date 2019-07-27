@@ -268,10 +268,13 @@ final public class ToolUtls {
 //        10 - >4
 //        5 - >3
     static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
-                                     FloatPanelService.PrepareImage subpre,
-                                     FeatureDetector fd,
-                                     DescriptorExtractor extractor,
-                                     float similar){
+                                                            FloatPanelService.PrepareImage subpre,
+                                                            FeatureDetector fd,
+                                                            DescriptorExtractor extractor,
+                                                            float similar,
+                                                            int needNum
+
+    ){
 
         FloatPanelService.MatchResult re = new FloatPanelService.MatchResult();
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
@@ -368,8 +371,7 @@ final public class ToolUtls {
 
         Log.d(TAG, "sortList.size() : " + sortList.size());
 
-        int need = 4;
-        if (sortList.size() >= need) {
+        if (sortList.size() >= needNum) {
             Log.d(TAG, "match found");
             for (DMatch dm : sortList){
                 org.opencv.core.Point p = orcpre.keyPoints[dm.queryIdx].pt;
@@ -384,21 +386,24 @@ final public class ToolUtls {
     }
 
     static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
-                                   FloatPanelService.PrepareImage subpre,
-                                   int featureDetector,
-                                   int descriptorExtractor,
-                                   float similar){
+                                                            FloatPanelService.PrepareImage subpre,
+                                                            int featureDetector,
+                                                            int descriptorExtractor,
+                                                            float similar,
+                                                            int needNum
+    ){
 
         FeatureDetector fd = FeatureDetector.create(featureDetector);
         DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
-        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar);
+        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar,needNum);
     }
 
     static FloatPanelService.MatchResult findSubImageWithCV(Bitmap orcimage,
                                                             Bitmap subimage,
                                                             int featureDetector,
                                                             int descriptorExtractor,
-                                                            float similar
+                                                            float similar,
+                                                            int needNum
     ) {
         FeatureDetector fd = FeatureDetector.create(featureDetector);
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
@@ -406,7 +411,7 @@ final public class ToolUtls {
 
         FloatPanelService.PrepareImage orcpre = prepareBitmap(orcimage,fd,extractor);
         FloatPanelService.PrepareImage subpre = prepareBitmap(subimage,fd,extractor);
-        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar);
+        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar,needNum);
     }
 
 }

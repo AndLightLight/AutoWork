@@ -157,9 +157,14 @@ public class ScriptMain extends ScriptInterface {
         re = FindPic(pre,"5",0.9f);
         while (re.rePoint.x > 0f && re.rePoint.y > 0f) {
             MoveAndClick(re.rePoint.x,re.rePoint.y,rengqiuDelay);
+            pre = prepareSnapshotScreen();
             re = FindPic(pre,"5",0.9f);
         }
-        re = FindPic(pre,"6",0.9f);
+        re = FindPic(pre,"6",0.9f,1);
+        if (re.rePoint.x > 0f && re.rePoint.y > 0f) {
+            MoveAndClick(re.rePoint.x,re.rePoint.y,rengqiuDelay);
+        }
+        re = FindPic(pre,"13",0.9f);
         if (re.rePoint.x > 0f && re.rePoint.y > 0f) {
             MoveAndClick(re.rePoint.x,re.rePoint.y,rengqiuDelay);
         }

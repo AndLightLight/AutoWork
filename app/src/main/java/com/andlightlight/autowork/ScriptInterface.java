@@ -65,12 +65,12 @@ public abstract class ScriptInterface {
             clickPath.lineTo(p.x, p.y);
         }
         GestureDescription.StrokeDescription clickStroke = null;
-//        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-//            clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, duration,isContinue);
-//        }
-//        else{
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, duration,isContinue);
+        }
+        else{
             clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, duration);
-//        }
+        }
         GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
         GestureDescription gd = clickBuilder.addStroke(clickStroke).build();
         if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {

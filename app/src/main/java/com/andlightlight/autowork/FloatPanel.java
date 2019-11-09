@@ -5,6 +5,7 @@ import android.accessibilityservice.GestureDescription;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.PixelFormat;
+import android.graphics.PointF;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
@@ -67,21 +68,6 @@ public class FloatPanel extends BasePanel{
         mFloatPanelService = (FloatPanelService) context;
         Instance = this;
     }
-
-    // callback invoked either when the gesture has been completed or cancelled
-    AccessibilityService.GestureResultCallback callback = new AccessibilityService.GestureResultCallback() {
-        @Override
-        public void onCompleted(GestureDescription gestureDescription) {
-            super.onCompleted(gestureDescription);
-            Log.d(TAG, "gesture completed");
-        }
-
-        @Override
-        public void onCancelled(GestureDescription gestureDescription) {
-            super.onCancelled(gestureDescription);
-            Log.d(TAG, "gesture cancelled");
-        }
-    };
 
     public String getSaveFilePath(){
         return mSaveFilePath = mFloatPanelService.getExternalFilesDir(null) + "/" + et6.getText().toString() + ".png";
@@ -176,8 +162,8 @@ public class FloatPanel extends BasePanel{
     View.OnClickListener mBoFangClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                boolean result = mFloatPanelService.dispatchGesture(GestureManager.RengQiu(), callback, null);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                GestureManager.click(new PointF[]{new PointF(568.970947f,1390.957031f),new PointF(523.102295f,1380.996704f),new PointF(476.471558f,1355.976563f),new PointF(412.959595f,1317.919922f),new PointF(379.456787f,1293.896484f),new PointF(361.329620f,1280.194702f),new PointF(354.968262f,1275.410156f),new PointF(339.955444f,1245.410156f),new PointF(330.463257f,1236.474609f),new PointF(327.252350f,1222.673828f),new PointF(316.966553f,1189.453125f),new PointF(312.231049f,1151.238525f),new PointF(309.468384f,1137.421875f),new PointF(310.968018f,1122.421875f),new PointF(310.968018f,1110.644653f),new PointF(310.968018f,1106.953125f),new PointF(321.465454f,1088.964844f),new PointF(336.068848f,1075.299194f),new PointF(361.861847f,1053.015015f),new PointF(430.460815f,1020.908203f),new PointF(452.865234f,1012.250061f),new PointF(471.461792f,1006.904297f),new PointF(494.887115f,1001.634338f),new PointF(507.963867f,999.462891f),new PointF(525.975952f,997.968750f),new PointF(547.465210f,997.968750f),new PointF(562.998169f,997.968750f),new PointF(631.891785f,1030.233398f),new PointF(644.463501f,1036.962891f),new PointF(654.975037f,1054.193726f),new PointF(680.591248f,1085.481079f),new PointF(686.964111f,1092.919922f),new PointF(691.463013f,1120.429688f),new PointF(697.461548f,1138.886719f),new PointF(695.961914f,1164.404297f),new PointF(695.961914f,1177.703491f),new PointF(695.961914f,1188.955078f),new PointF(691.640259f,1211.026733f),new PointF(681.792603f,1239.885132f),new PointF(677.966309f,1249.453125f),new PointF(671.939453f,1256.014038f),new PointF(662.576965f,1268.693359f),new PointF(653.972168f,1272.480469f),new PointF(650.351868f,1274.905518f),new PointF(633.966064f,1273.945313f),new PointF(620.596802f,1272.109375f),new PointF(609.971924f,1269.462891f),new PointF(588.318848f,1258.124878f),new PointF(547.721985f,1231.196289f),new PointF(503.850952f,1205.249268f),new PointF(466.244598f,1180.323608f),new PointF(438.469849f,1159.921875f),new PointF(439.969482f,1155.439453f),new PointF(439.969482f,1141.904297f),new PointF(439.969482f,1125.410156f),new PointF(454.965820f,1117.968750f),new PointF(463.963623f,1110.439453f),new PointF(478.959961f,1106.953125f),new PointF(488.216583f,1106.953125f),new PointF(501.035034f,1109.478027f),new PointF(504.964600f,1111.435547f),new PointF(534.932617f,1139.931641f),new PointF(538.467407f,1158.457031f),new PointF(539.967041f,1172.312744f),new PointF(539.967041f,1175.419922f),new PointF(539.967041f,1188.925781f),new PointF(539.967041f,1199.443359f),new PointF(539.967041f,1205.419922f),new PointF(539.967041f,1206.909180f),new PointF(536.967773f,1205.917969f),new PointF(529.469604f,1205.917969f),new PointF(530.969238f,1203.925781f)},1187);
             }
         }
     };

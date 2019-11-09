@@ -1,10 +1,16 @@
 package com.andlightlight.autowork;
 
+import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.graphics.Path;
+import android.graphics.PointF;
 import android.os.Build;
 import android.support.annotation.RequiresApi;
 import android.util.Log;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class GestureManager {
     public static void LogLong(String tag, String msg) {  //信息太长,分段打印
@@ -18,6 +24,54 @@ public class GestureManager {
         }
         //剩余部分
         Log.i(tag, msg);
+    }
+
+    @RequiresApi(api = Build.VERSION_CODES.O)
+    public static void click(final PointF[] points, long duration){
+        GestureDescription.StrokeDescription clickStroke = null;
+        final List clickStrokeList = new ArrayList();
+        Path clickPath = new Path();
+        clickPath.moveTo(points[0].x, points[0].y);
+        for (int i = 0;i < points.length; ++ i){
+            PointF p = points[i];
+            clickPath.lineTo(p.x, p.y);
+
+            if (i < points.length - 1){
+                if (clickStroke == null)
+                    clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, 1000, true);
+                else
+                    clickStroke = clickStroke.continueStroke(clickPath,0,1000,true);
+                clickPath = new Path();
+                clickPath.moveTo(points[i].x, points[i].y);
+            }
+            else{
+                if (i == 0)
+                    clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, 1000, false);
+                else
+                    clickStroke = clickStroke.continueStroke(clickPath,0,1000,false);
+            }
+            clickStrokeList.add(clickStroke);
+        }
+
+        GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
+        final GestureDescription gd = clickBuilder.addStroke((GestureDescription.StrokeDescription) clickStrokeList.get(0)).build();
+        AccessibilityService.GestureResultCallback callback = new AccessibilityService.GestureResultCallback() {
+            @Override
+            public void onCompleted(GestureDescription gestureDescription) {
+                super.onCompleted(gestureDescription);
+                clickStrokeList.remove(0);
+                if (clickStrokeList.size() > 0)
+                    FloatPanelService.Instance.dispatchGesture(new GestureDescription.Builder().addStroke((GestureDescription.StrokeDescription) clickStrokeList.get(0)).build(), this, null);
+            }
+
+            @Override
+            public void onCancelled(GestureDescription gestureDescription) {
+                super.onCancelled(gestureDescription);
+            }
+        };
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+            boolean result = FloatPanelService.Instance.dispatchGesture(gd, callback, null);
+        }
     }
 
     @RequiresApi(api = Build.VERSION_CODES.O)

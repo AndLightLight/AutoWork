@@ -37,16 +37,16 @@ public class FloatPanelService extends AccessibilityService {
     VirtualDisplay mVirtualDisplay;
     FloatPanel mFloatPanel;
 
-    static class MatchResult{
+    public static class MatchResult{
         Mat largeImage;
         Mat smallImage;
         MatOfKeyPoint keyPointsLarge;
         MatOfKeyPoint keyPointsSmall;
         MatOfDMatch matchesFiltered;
-        PointF rePoint = new PointF();
+        public PointF rePoint = new PointF();
     }
 
-    static class PrepareImage{
+    public static class PrepareImage{
         Mat imageMat;
         Mat imageDesMat;
         MatOfKeyPoint keyPointsMat;

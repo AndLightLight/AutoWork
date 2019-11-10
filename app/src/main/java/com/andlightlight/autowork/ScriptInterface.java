@@ -51,31 +51,11 @@ public abstract class ScriptInterface {
     }
 
     protected void click(float x, float y){
-        click(new PointF[]{new PointF(x,y)},100);
+        click(new GestureManager.Point[]{new GestureManager.Point(x,y,100)});
     }
 
-    protected void click(PointF[] points, long duration){
-        click(points,duration,false);
-    }
-
-    protected void click(PointF[] points, long duration, boolean isContinue){
-        Path clickPath = new Path();
-        clickPath.moveTo(points[0].x, points[0].y);
-        for (PointF p : points){
-            clickPath.lineTo(p.x, p.y);
-        }
-        GestureDescription.StrokeDescription clickStroke = null;
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, duration,isContinue);
-        }
-        else{
-            clickStroke = new GestureDescription.StrokeDescription(clickPath, 0, duration);
-        }
-        GestureDescription.Builder clickBuilder = new GestureDescription.Builder();
-        GestureDescription gd = clickBuilder.addStroke(clickStroke).build();
-        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-            boolean result = FloatPanelService.Instance.dispatchGesture(gd, null, null);
-        }
+    protected void click(GestureManager.Point[] points){
+        GestureManager.click(points);
     }
 
     protected FloatPanelService.PrepareImage prepareSnapshotScreen(){

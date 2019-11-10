@@ -16,7 +16,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
-import com.andlightlight.autowork.script.ScriptMain;
+import com.andlightlight.autowork.script.MYSLScript;
 import com.andlightlight.autowork.script.TestScript;
 
 import org.opencv.android.Utils;
@@ -86,13 +86,14 @@ public class FloatPanel extends BasePanel{
     View.OnTouchListener mMoveTouchListener = new View.OnTouchListener() {
         private int x;
         private int y;
-
+        boolean isMove = false;
         @Override
         public boolean onTouch(View view, MotionEvent event) {
             switch (event.getAction()) {
                 case MotionEvent.ACTION_DOWN:
                     x = (int) event.getRawX();
                     y = (int) event.getRawY();
+                    isMove = false;
                     break;
                 case MotionEvent.ACTION_MOVE:
                     int nowX = (int) event.getRawX();
@@ -104,7 +105,10 @@ public class FloatPanel extends BasePanel{
                     mLayoutParams.x = mLayoutParams.x + movedX;
                     mLayoutParams.y = mLayoutParams.y + movedY;
                     mWindowManager.updateViewLayout(mRoot, mLayoutParams);
+                    isMove = true;
                     break;
+                case MotionEvent.ACTION_UP:
+                    return isMove;
                 default:
                     break;
             }
@@ -172,23 +176,6 @@ public class FloatPanel extends BasePanel{
 
         @Override
         public void onClick(View v) {
-            //example
-//                    AccessibilityNodeInfo rootNode = getRootInActiveWindow();
-//                    recycle(rootNode);
-//                    boolean isc = rootNode.isClickable();
-//                    rootNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-//
-//
-//
-//                    TimerTask task = new TimerTask() {
-//                        @Override
-//                        public void run() {
-//                            boolean result = dispatchGesture(createClick(1080/4, 2160*2/(2*3)), callback, null);
-//                        }
-//                    };
-//                    Timer timer = new Timer(true);
-//                    timer.schedule(task,strToDateLong("2019-05-15 20:00:00"));
-
             if (mIsCompare) {
                 Bitmap subimage = ToolUtls.getBitmapFromPath(getSaveFilePath());
                 subimage = ToolUtls.scaleBitmap(subimage, 1f / mFloatPanelService.GetImageScale());
@@ -277,13 +264,14 @@ public class FloatPanel extends BasePanel{
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        new TestScript().start();
+                        new MYSLScript().start();
                     }
                 });
                 thread.start();
             }
             else{
                 thread.interrupt();
+                mIsStart = false;
             }
             mIsStart = mIsStart == false;
         }

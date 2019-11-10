@@ -16,6 +16,7 @@ import android.util.Log;
 import android.view.WindowManager;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
+import android.view.accessibility.AccessibilityWindowInfo;
 
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
@@ -23,6 +24,8 @@ import org.opencv.core.MatOfKeyPoint;
 import org.opencv.features2d.KeyPoint;
 
 import java.nio.ByteBuffer;
+import java.sql.Struct;
+import java.util.HashMap;
 import java.util.List;
 
 public class FloatPanelService extends AccessibilityService {
@@ -36,6 +39,8 @@ public class FloatPanelService extends AccessibilityService {
     ImageReader mImageReader;
     VirtualDisplay mVirtualDisplay;
     FloatPanel mFloatPanel;
+
+    HashMap<Integer,HashMap<String,Runnable>> mEventMap = new HashMap<>();
 
     public static class MatchResult{
         Mat largeImage;
@@ -134,15 +139,61 @@ public class FloatPanelService extends AccessibilityService {
         mFloatPanel.show();
     }
 
+    void recycle(AccessibilityNodeInfo node){
+        if (node != null) {
+            Log.i("test2", String.format("class:%s, text:%s, Resource:%s", node.getClassName(), node.getText(), node.getViewIdResourceName()));
+            if (node.getChildCount() == 0) {
+            } else {
+                for (int i = 0; i < node.getChildCount(); i++) {
+                    if (node.getChild(i) != null) {
+                        recycle(node.getChild(i));
+                    }
+                }
+            }
+        }
+    }
+
+    public void RegisterEvent(int event, final String packageName, final Runnable action){
+        HashMap v = mEventMap.get(event);
+        if (v == null)
+            mEventMap.put(event,new HashMap<String, Runnable>(){{put(packageName,action);}});
+        else
+            v.put(packageName,action);
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
+        HashMap v = mEventMap.get(event.getEventType());
+        if (v != null) {
+            Runnable action = (Runnable) v.get(event.getPackageName());
+            if (action != null)
+                action.run();
+        }
+        Log.i("test2",String.format("event:%s, package:%s, class:%s", event.toString(), event.getPackageName(), event.getClassName()));
         int eventType = event.getEventType();
+        AccessibilityNodeInfo rootNode = getRootInActiveWindow();
+        recycle(rootNode);
         switch (eventType) {
             case AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED:
                     //example
 //                findAndClickButtonByString(event, "立即购买");
 //                findAndClickButtonByString(event, "确定");
 //                findAndClickButtonByString(event, "提交订单");
+
+//                List<AccessibilityWindowInfo> windowList = getWindows();
+//                boolean isc = rootNode.isClickable();
+//                rootNode.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+
+
+
+//            TimerTask task = new TimerTask() {
+//                @Override
+//                public void run() {
+//                    boolean result = dispatchGesture(createClick(1080/4, 2160*2/(2*3)), callback, null);
+//                }
+//            };
+//            Timer timer = new Timer(true);
+//            timer.schedule(task,strToDateLong("2019-05-15 20:00:00"));
             break;
             default:
                 break;
@@ -151,7 +202,6 @@ public class FloatPanelService extends AccessibilityService {
 
     @Override
     public void onInterrupt() {
-
     }
 
     @Override

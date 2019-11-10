@@ -10,7 +10,7 @@ import com.andlightlight.autowork.ScriptInterface;
 
 import java.util.Date;
 
-public class ScriptMain extends ScriptInterface {
+public class MainScript extends ScriptInterface {
     Date LastRengQiuDate;
     @Override
     protected void startImp() throws InterruptedException{

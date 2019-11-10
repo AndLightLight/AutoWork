@@ -3,11 +3,15 @@ package com.andlightlight.autowork;
 import android.accessibilityservice.GestureDescription;
 import android.app.Activity;
 import android.app.Application;
+import android.content.ComponentName;
+import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Path;
 import android.graphics.Point;
 import android.graphics.PointF;
+import android.util.Log;
+import android.view.accessibility.AccessibilityNodeInfo;
 
 import org.opencv.core.Mat;
 import org.opencv.features2d.DescriptorExtractor;
@@ -17,6 +21,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
+import java.util.regex.Pattern;
 
 public abstract class ScriptInterface {
     HashMap<String, FloatPanelService.PrepareImage> mLoadPreImage = new HashMap<>();
@@ -26,6 +31,11 @@ public abstract class ScriptInterface {
     protected DescriptorExtractor mExtractor = DescriptorExtractor.create(mDescriptorExtractor);
     protected Bitmap mScreeShopImageCache;
     protected int mDefaultNeedNum = 4;
+
+    protected interface FindNodeCallBack{
+        void run(AccessibilityNodeInfo node);
+    }
+
     public void start(){
         mLoadPreImage.clear();
         File dir = new File(FloatPanelService.Instance.getExternalFilesDir(null) + "/");
@@ -93,5 +103,59 @@ public abstract class ScriptInterface {
     protected FloatPanelService.MatchResult FindPic(int left, int top, int right, int down, String subpic, float similar, int needNum){
         return ToolUtls.findSubImageWithCV(prepareSnapshotScreen(left,top,right,down),mLoadPreImage.get(subpic),mFd,mExtractor,similar,needNum);
     }
+
+    protected void OpenActivity(String packageName, String ActivityName){
+        Intent intent = new Intent().setComponent(new ComponentName(packageName,ActivityName));
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        FloatPanelService.Instance.startActivity(intent);
+    }
+
+    protected void ClickButton(String txtPattern){
+        AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
+        FindNode(rootNode, txtPattern, "android.widget.Button", new FindNodeCallBack() {
+            @Override
+            public void run(AccessibilityNodeInfo node) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+        });
+    }
+
+    protected void ClickText(String txtPattern){
+        AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
+        FindNode(rootNode, txtPattern, "android.widget.TextView", new FindNodeCallBack() {
+            @Override
+            public void run(AccessibilityNodeInfo node) {
+                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+            }
+        });
+    }
+
+    protected void FindNode(AccessibilityNodeInfo node, String txtPattern, String classPattern, FindNodeCallBack action){
+        if (node == null)
+            node = FloatPanelService.Instance.getRootInActiveWindow();
+        if (node != null) {
+            boolean isMatchText = true;
+            boolean isMatchClass = true;
+            if (txtPattern != null && txtPattern.compareTo("") != 0)
+                isMatchText = Pattern.matches(txtPattern, node.getText());
+            if (classPattern != null && classPattern.compareTo("") != 0)
+                isMatchClass = Pattern.matches(classPattern, node.getClassName());
+            if (isMatchText && isMatchClass)
+                action.run(node);
+            if (node.getChildCount() == 0) {
+            } else {
+                for (int i = 0; i < node.getChildCount(); i++) {
+                    if (node.getChild(i) != null) {
+                        FindNode(node.getChild(i), txtPattern, classPattern, action);
+                    }
+                }
+            }
+        }
+    }
+
+    protected void RegisterEvent(int event, String packageName, Runnable action){
+        FloatPanelService.Instance.RegisterEvent(event,packageName,action);
+    }
+
     protected abstract void startImp() throws InterruptedException;
 }

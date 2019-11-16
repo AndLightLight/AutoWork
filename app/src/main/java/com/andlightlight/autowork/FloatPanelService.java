@@ -25,8 +25,11 @@ import org.opencv.features2d.KeyPoint;
 
 import java.nio.ByteBuffer;
 import java.sql.Struct;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class FloatPanelService extends AccessibilityService {
 
@@ -40,7 +43,7 @@ public class FloatPanelService extends AccessibilityService {
     VirtualDisplay mVirtualDisplay;
     FloatPanel mFloatPanel;
 
-    HashMap<Integer,HashMap<String,Runnable>> mEventMap = new HashMap<>();
+    HashMap<Integer, Set<Runnable>> mEventMap = new HashMap<>();
 
     public static class MatchResult{
         Mat largeImage;
@@ -153,21 +156,28 @@ public class FloatPanelService extends AccessibilityService {
         }
     }
 
-    public void RegisterEvent(int event, final String packageName, final Runnable action){
-        HashMap v = mEventMap.get(event);
+    public void RegisterEvent(int event, final Runnable action){
+        Set v = mEventMap.get(event);
         if (v == null)
-            mEventMap.put(event,new HashMap<String, Runnable>(){{put(packageName,action);}});
+            mEventMap.put(event,new HashSet<Runnable>(){{add(action);}});
         else
-            v.put(packageName,action);
+            v.add(action);
+    }
+
+    public void RemoveEvent(int event, final Runnable action){
+        Set v = mEventMap.get(event);
+        if (v != null)
+            v.remove(action);
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        HashMap v = mEventMap.get(event.getEventType());
+        Set v = mEventMap.get(event.getEventType());
         if (v != null) {
-            Runnable action = (Runnable) v.get(event.getPackageName());
-            if (action != null)
+            for (Object a : v) {
+                Runnable action = (Runnable) a;
                 action.run();
+            }
         }
         Log.i("test2",String.format("event:%s, package:%s, class:%s", event.toString(), event.getPackageName(), event.getClassName()));
         int eventType = event.getEventType();

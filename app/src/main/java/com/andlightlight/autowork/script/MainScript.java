@@ -48,6 +48,11 @@ public class MainScript extends ScriptInterface {
         }
     }
 
+    @Override
+    protected void endImp() throws InterruptedException {
+
+    }
+
     void RoundClick() throws InterruptedException {
         int allDelay = 2000;
         click(new GestureManager.Point[]{new GestureManager.Point(449.000000f,1179.000000f, 48)});

@@ -264,7 +264,12 @@ public class FloatPanel extends BasePanel{
                 thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
-                        new MYSLScript().start();
+                        new MYSLScript().start(new Runnable() {
+                            @Override
+                            public void run() {
+                                mIsStart = false;
+                            }
+                        });
                     }
                 });
                 thread.start();

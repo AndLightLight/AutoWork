@@ -23,4 +23,9 @@ public class TestScript extends ScriptInterface {
         click(new GestureManager.Point[]{new GestureManager.Point(551.964111f,1179.960938f,10),new GestureManager.Point(563.961182f,1221.943359f,70),new GestureManager.Point(569.959717f,1232.958984f,10),new GestureManager.Point(574.475098f,1249.453125f,18),new GestureManager.Point(580.968018f,1267.441406f,10),new GestureManager.Point(591.465454f,1276.962891f,18),new GestureManager.Point(597.463989f,1314.433594f,18),new GestureManager.Point(610.960693f,1340.449219f,17),new GestureManager.Point(623.468628f,1369.453125f,18),new GestureManager.Point(627.209534f,1373.151001f,1),new GestureManager.Point(629.467163f,1375.400391f,18),new GestureManager.Point(627.967529f,1382.958984f,18)});
 
     }
+
+    @Override
+    protected void endImp() throws InterruptedException {
+
+    }
 }

@@ -7,12 +7,14 @@ import com.andlightlight.autowork.ScriptInterface;
 public class MYSLScript extends ScriptInterface {
     @Override
     protected void startImp() throws InterruptedException {
-        OpenActivity("package:com.eg.android.AlipayGphone","com.eg.android.AlipayGphone.AlipayLogin");
-        RegisterEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, "package:com.eg.android.AlipayGphone", new Runnable() {
-            @Override
-            public void run() {
-                ClickText("蚂蚁森林");
-            }
-        });
+        //OpenActivity("alipay://platformapi/startapp?appId=60000002");
+        OpenApp("支付宝");
+        click("蚂蚁森林");
+        int dfdf = 1;
+    }
+
+    @Override
+    protected void endImp() throws InterruptedException {
+
     }
 }

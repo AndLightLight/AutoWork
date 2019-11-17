@@ -144,7 +144,7 @@ public class FloatPanelService extends AccessibilityService {
 
     void recycle(AccessibilityNodeInfo node){
         if (node != null) {
-            Log.i("test2", String.format("class:%s, text:%s, Resource:%s", node.getClassName(), node.getText(), node.getViewIdResourceName()));
+            Log.i("test2", String.format("class:%s, text:%s, Resource:%s, ContentDes:%s, Paneltxt:%s", node.getClassName(), node.getText(), node.getViewIdResourceName(), node.getContentDescription(), node.getPaneTitle()));
             if (node.getChildCount() == 0) {
             } else {
                 for (int i = 0; i < node.getChildCount(); i++) {
@@ -170,9 +170,13 @@ public class FloatPanelService extends AccessibilityService {
             v.remove(action);
     }
 
+    public void RemoveAllEvent(){
+        mEventMap.clear();
+    }
+
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        Set v = mEventMap.get(event.getEventType());
+       Set v = mEventMap.get(event.getEventType());
         if (v != null) {
             for (Object a : v) {
                 Runnable action = (Runnable) a;

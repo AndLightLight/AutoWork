@@ -1,5 +1,6 @@
 package com.andlightlight.autowork;
 
+import android.accessibilityservice.AccessibilityService;
 import android.accessibilityservice.GestureDescription;
 import android.app.Activity;
 import android.app.Application;
@@ -27,7 +28,9 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.sql.PreparedStatement;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
@@ -42,7 +45,7 @@ public abstract class ScriptInterface {
     protected Runnable mEndAction;
 
     protected interface FindNodeCallBack {
-        void run(AccessibilityNodeInfo node);
+        boolean run(AccessibilityNodeInfo node) throws InterruptedException;
     }
 
     public void start(Runnable endAction) {
@@ -68,6 +71,7 @@ public abstract class ScriptInterface {
     }
 
     protected void end(){
+        FloatPanelService.Instance.RemoveAllEvent();
         try {
             endImp();
         } catch (InterruptedException e) {
@@ -143,62 +147,100 @@ public abstract class ScriptInterface {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
-    protected void OpenActivity(String packageName, String ActivityName) {
-        Intent intent = new Intent().setComponent(new ComponentName(packageName, ActivityName));
-        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        FloatPanelService.Instance.startActivity(intent);
-    }
+    protected void waitText(final String[] uitxts) {
+        final Semaphore semaphore = new Semaphore(0);
+        RegisterEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
+                    boolean isfind = FindNode(rootNode, uitxts, null, new FindNodeCallBack() {
+                        private Set<String> mNeedUI = new HashSet<String>(){{for (String txt: uitxts) add(txt);}};
+                        @Override
+                        public boolean run(AccessibilityNodeInfo node) {
+                            mNeedUI.remove(node.getText().toString());
+                            if (mNeedUI.isEmpty())
+                                return true;
+                            else
+                                return false;
+                        }
+                    });
+                    if (isfind) {
+                        semaphore.release();
+                        RemoveEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,this);
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
 
-    protected void OpenActivity(String uri) {
-        Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(uri));
-        FloatPanelService.Instance.startActivity(intent);
+            }
+        });
+        try {
+            semaphore.acquire();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
 
 
     protected void click(String txtPattern) {
-        click(txtPattern, "", 1, true);
+        click(new String[]{txtPattern}, null, 1, true, false);
     }
 
-    protected void click(final String txtPattern, final String classPattern, final int times, final boolean isBlock) {
-        final Semaphore semaphore = new Semaphore(1);
-        if (isBlock){
-            try {
-                semaphore.acquire();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+    protected void clickCurrentUI(String txtPattern, final boolean isClickAll) throws InterruptedException {
+        clickCurrentUI(new String[]{txtPattern}, null, isClickAll);
+    }
 
+    protected boolean clickCurrentUI(final String[] txtPatterns, final String classPattern, final boolean isClickAll) throws InterruptedException {
+        AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
+        boolean isfind = FindNode(rootNode, txtPatterns, classPattern, new FindNodeCallBack() {
+            @Override
+            public boolean run(AccessibilityNodeInfo node) throws InterruptedException {
+//                if (node.isClickable())
+                    node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
+//                else {
+                    Rect b = new Rect();
+                    node.getBoundsInScreen(b);
+                    click(b.centerX(), b.centerY());
+//                }
+                if (!isClickAll)
+                    return true;
+                else {
+                    sleep(300);
+                    return false;
+                }
+            }
+        });
+        return isfind;
+    }
+
+    protected void click(final String[] txtPatterns, final String classPattern, final int times, boolean isBlock, final boolean isClickAll) {
+        if (isClickAll)
+            isBlock = false;
+        final boolean finalisBlock = isBlock;
+        final Semaphore semaphore = new Semaphore(0);
         RegisterEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
             private int runtimes = times;
             @Override
             public void run() {
-                if (runtimes > 0 || runtimes < 0) {
-                    AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
-                    boolean isfind = FindNode(rootNode, txtPattern, classPattern, new FindNodeCallBack() {
-                        @Override
-                        public void run(AccessibilityNodeInfo node) {
-                            if (node.isClickable())
-                                node.performAction(AccessibilityNodeInfo.ACTION_CLICK);
-                            else {
-                                Rect b = new Rect();
-                                node.getBoundsInScreen(b);
-                                click(b.centerX(), b.centerY());
-                            }
-                        }
-                    });
-                    if (isfind)
-                        runtimes--;
-                }
-                if (runtimes == 0) {
-                    RemoveEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, this);
-                    if (isBlock)
-                        semaphore.release();
+                try {
+                    if (runtimes > 0 || runtimes < 0) {
+                        boolean isfind = clickCurrentUI(txtPatterns, classPattern, isClickAll);
+                        if (isfind)
+                            runtimes--;
+                    }
+                    if (runtimes == 0) {
+                        RemoveEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, this);
+                        if (finalisBlock)
+                            semaphore.release();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
         });
-        if (isBlock){
+        if (finalisBlock){
             try {
                 semaphore.acquire();
             } catch (InterruptedException e) {
@@ -207,29 +249,35 @@ public abstract class ScriptInterface {
         }
     }
 
-    protected boolean FindNode(AccessibilityNodeInfo node, String txtPattern, String classPattern, FindNodeCallBack action) {
+    protected boolean FindNode(AccessibilityNodeInfo node, String[] txtPatterns, String classPattern, FindNodeCallBack action) throws InterruptedException {
         if (node == null)
             node = FloatPanelService.Instance.getRootInActiveWindow();
         if (node != null) {
             boolean isMatchText = true;
             boolean isMatchClass = true;
-            if (txtPattern != null && txtPattern.compareTo("") != 0) {
-                CharSequence str = node.getText();
-                    isMatchText = str == null? false : Pattern.matches(txtPattern, str);
+            if (txtPatterns != null && txtPatterns.length > 0 ) {
+                isMatchText = false;
+                for (String txtPattern : txtPatterns){
+                    CharSequence str = node.getText();
+                    if (str == null? false : Pattern.matches(txtPattern, str)){
+                        isMatchText = true;
+                        break;
+                    }
+                }
             }
             if (classPattern != null && classPattern.compareTo("") != 0) {
                 CharSequence str = node.getClassName();
                     isMatchClass = str == null? false : Pattern.matches(classPattern, str);
             }
             if (isMatchText && isMatchClass) {
-                action.run(node);
-                return true;
+                if (action.run(node))
+                    return true;
             }
             if (node.getChildCount() == 0) {
             } else {
                 for (int i = 0; i < node.getChildCount(); i++) {
                     if (node.getChild(i) != null) {
-                        boolean isfind = FindNode(node.getChild(i), txtPattern, classPattern, action);
+                        boolean isfind = FindNode(node.getChild(i), txtPatterns, classPattern, action);
                         if (isfind) return true;
                     }
                 }
@@ -244,6 +292,14 @@ public abstract class ScriptInterface {
 
     protected void RemoveEvent(int event, Runnable action) {
         FloatPanelService.Instance.RemoveEvent(event, action);
+    }
+
+    protected void back(){
+        FloatPanelService.Instance.performGlobalAction(AccessibilityService.GLOBAL_ACTION_BACK);
+    }
+
+    protected void home(){
+        FloatPanelService.Instance.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
     }
 
     protected abstract void startImp() throws InterruptedException;

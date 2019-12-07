@@ -2,7 +2,11 @@ package com.andlightlight.autowork;
 
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
 import android.graphics.PixelFormat;
+import android.graphics.Rect;
 import android.os.Build;
 import android.provider.Settings;
 import android.util.Log;
@@ -25,6 +29,8 @@ import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
 import org.opencv.imgproc.Imgproc;
+
+import java.util.List;
 
 public class FloatPanel extends BasePanel{
 
@@ -209,15 +215,31 @@ public class FloatPanel extends BasePanel{
                     if (findLeft >= 0 && findTop >= 0 && findRight >= 0 && findBottom >= 0){
                         bitmap = ToolUtls.cropBitmap(bitmap,findLeft,findTop,findRight - findLeft,findBottom - findTop);
                     }
-                    FloatPanelService.MatchResult mr = ToolUtls.findSubImageWithCV(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
-                    Mat largeImageRgb = new Mat();
-                    Mat smallImageRgb = new Mat();
-                    Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-                    Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-                    Mat outmapM = new Mat();
-                    Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
-                    Bitmap outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
-                    Utils.matToBitmap(outmapM, outmap);
+                    Bitmap outmap = null;
+                    if (featureDetector <= 0){
+                        List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
+                        outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
+                        Canvas cnvs = new Canvas(outmap);
+                        Paint paint = new Paint();
+                        paint.setColor(Color.RED);
+                        paint.setStyle(Paint.Style.STROKE);
+                        cnvs.drawBitmap(bitmap,0,0,paint);
+                        cnvs.drawBitmap(subimage,bitmap.getWidth(),0,paint);
+                        for (ToolUtls.Match r : reslutlist){
+                            cnvs.drawRect(new Rect((int)(r.point.x),(int)(r.point.y),(int)(r.point.x + subimage.getWidth()), (int)(r.point.y + subimage.getHeight())),paint);
+                        }
+                    }
+                    else{
+                        FloatPanelService.MatchResult mr = ToolUtls.findSubImageWithCV(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
+                        Mat largeImageRgb = new Mat();
+                        Mat smallImageRgb = new Mat();
+                        Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+                        Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+                        Mat outmapM = new Mat();
+                        Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
+                        outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
+                        Utils.matToBitmap(outmapM, outmap);
+                    }
 
                     if (mCompareResult == null) {
                         mCompareResult = new ImageView(mContext);

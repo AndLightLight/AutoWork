@@ -13,6 +13,7 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDMatch;
 import org.opencv.core.MatOfKeyPoint;
+import org.opencv.core.MatOfPoint;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
 import org.opencv.core.Scalar;
@@ -576,14 +577,14 @@ final public class ToolUtls {
                     break;
                 }
                 Mat matchResult = matchTemplate(src, currentTemplate, matchMethod);
-                getBestMatched(matchResult, currentTemplate, matchMethod, 0.7f, currentMatchResult, -1, null);
+                getBestMatched(matchResult, currentTemplate, matchMethod, 0.7f, currentMatchResult, 1, null);
             } else {
                 for (Match match : previousMatchResult) {
                     // 根据上一轮的匹配点，计算本次匹配的区域
                     Rect r = getROI(match.point, src, currentTemplate);
                     Mat m = new Mat(src, r);
                     Mat matchResult = matchTemplate(m, currentTemplate, matchMethod);
-                    getBestMatched(matchResult, currentTemplate, matchMethod, 0.7f, currentMatchResult, -1, r);
+                    getBestMatched(matchResult, currentTemplate, matchMethod, 0.7f, currentMatchResult, 1, r);
                 }
             }
 
@@ -607,6 +608,69 @@ final public class ToolUtls {
             previousMatchResult = currentMatchResult;
         }
         return finalMatchResult;
+    }
+
+
+    static private boolean checksPath(Mat image, Point startingPoint, int threshold, Rect rect, int[] points) {
+        for (int i = 0; i < points.length; i += 3) {
+            int x = points[i];
+            int y = points[i + 1];
+            int color = points[i + 2];
+            ColorDetector colorDetector = new ColorDetector.DifferenceDetector(color, threshold);
+            x += startingPoint.x;
+            y += startingPoint.y;
+            if (x >= image.width() || y >= image.height()
+                    || x < 0 || y < 0) {
+                return false;
+            }
+            double[] channels = image.get(x, y);
+            int c = Color.argb((int) channels[3], (int) channels[0], (int) channels[1], (int) channels[2]);
+            if (!colorDetector.detectsColor(Color.red(c), Color.green(c), Color.blue(c))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    static Point findColorsWithCV(Bitmap orcimage, int firstColor, int threshold, Rect rect, int[] points) {
+        Mat orcMat = new Mat();
+        Utils.bitmapToMat(orcimage, orcMat);
+        Mat bi = new Mat();
+        Scalar lowerBound = new Scalar(Color.red(firstColor) - threshold, Color.green(firstColor) - threshold,
+                Color.blue(firstColor) - threshold, 255);
+        Scalar upperBound = new Scalar(Color.red(firstColor) + threshold, Color.green(firstColor) + threshold,
+                Color.blue(firstColor) + threshold, 255);
+        if (rect != null) {
+            Mat m = new Mat(orcMat, rect);
+            Core.inRange(m, lowerBound, upperBound, bi);
+        } else {
+            Core.inRange(orcMat, lowerBound, upperBound, bi);
+        }
+        Mat nonZeroPos = new Mat();
+        Core.findNonZero(bi, nonZeroPos);
+        MatOfPoint matpoint;
+        if (nonZeroPos.rows() == 0 || nonZeroPos.cols() == 0) {
+            matpoint = null;
+        } else {
+            matpoint = new MatOfPoint(nonZeroPos);
+        }
+
+        Point[] repoints = matpoint.toArray();
+        if (rect != null) {
+            for (int i = 0; i < repoints.length; i++) {
+                repoints[i].x = repoints[i].x + rect.x;
+                repoints[i].y = repoints[i].y + rect.y;
+            }
+        }
+
+        for (Point firstPoint : repoints) {
+            if (firstPoint == null)
+                continue;
+            if (checksPath(orcMat, firstPoint, threshold, rect, points)) {
+                return firstPoint;
+            }
+        }
+        return null;
     }
 
 }

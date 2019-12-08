@@ -25,6 +25,7 @@ import com.andlightlight.autowork.script.TestScript;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
+import org.opencv.core.Point;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
@@ -60,6 +61,7 @@ public class FloatPanel extends BasePanel{
     Button bt5;
     Button bt6;
     Button bt7;
+    Button bt8;
     EditText et0;
     EditText et1;
     EditText et2;
@@ -217,7 +219,8 @@ public class FloatPanel extends BasePanel{
                     }
                     Bitmap outmap = null;
                     if (featureDetector <= 0){
-                        List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
+                        List<ToolUtls.Match> reslutlist = ToolUtls.findColorsWithCV(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
+                        //List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
                         outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas cnvs = new Canvas(outmap);
                         Paint paint = new Paint();
@@ -251,7 +254,7 @@ public class FloatPanel extends BasePanel{
                     mWindowManager.updateViewLayout(mRoot, mLayoutParams);
                     mCompareResult.setImageBitmap(outmap);
                 } catch (Exception e) {
-                    Log.e(TAG, "FindSubImageWithCV ");
+                    Log.e(TAG, "FindSubImageWithCV error: " + ToolUtls.getExceptionAllinformation(e));
                 }
             } else {
                 mLayoutParams.width = OVER_PANEL_OPEN_WIDTH;
@@ -298,7 +301,6 @@ public class FloatPanel extends BasePanel{
             }
             else{
                 thread.interrupt();
-                mIsStart = false;
             }
             mIsStart = mIsStart == false;
         }
@@ -308,6 +310,19 @@ public class FloatPanel extends BasePanel{
         @Override
         public void onClick(View v) {
             FloatPanelService.Instance.disableSelf();
+        }
+    };
+
+    View.OnClickListener mPixelClickListener = new View.OnClickListener() {
+        boolean mIsStart = false;
+        CatchPointPanel mPanel = new CatchPointPanel(mContext);
+        @Override
+        public void onClick(View v) {
+            if (mIsStart == false)
+                mPanel.show();
+            else
+                mPanel.hide();
+            mIsStart = mIsStart == false;
         }
     };
 
@@ -340,6 +355,7 @@ public class FloatPanel extends BasePanel{
             bt5 = mRoot.findViewById(R.id.button5);
             bt6 = mRoot.findViewById(R.id.button6);
             bt7 = mRoot.findViewById(R.id.button7);
+            bt8 = mRoot.findViewById(R.id.button8);
             et0 = mRoot.findViewById(R.id.editText0);
             et1 = mRoot.findViewById(R.id.editText1);
             et2 = mRoot.findViewById(R.id.editText2);
@@ -357,6 +373,7 @@ public class FloatPanel extends BasePanel{
             bt0.setOnTouchListener(mMoveTouchListener);
             bt6.setOnClickListener(mRunClickListener);
             bt7.setOnClickListener(mCloseClickListener);
+            bt8.setOnClickListener(mPixelClickListener);
         }
     }
 

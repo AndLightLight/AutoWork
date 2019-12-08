@@ -24,11 +24,13 @@ import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.imgproc.Imgproc;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.text.ParsePosition;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -59,6 +61,31 @@ final public class ToolUtls {
                     ", similarity=" + similarity +
                     '}';
         }
+    }
+
+    public static class ColorPos{
+        public int color;
+        public int x;
+        public int y;
+        ColorPos(int x, int y, String color){
+            this.color = Color.parseColor(color);
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+
+    public static String getExceptionAllinformation(Exception ex) {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        PrintStream pout = new PrintStream(out);
+        ex.printStackTrace(pout);
+        String ret = new String(out.toByteArray());
+        pout.close();
+        try {
+            out.close();
+        } catch (Exception e) {
+        }
+        return ret;
     }
 
     /**
@@ -624,15 +651,32 @@ final public class ToolUtls {
                 return false;
             }
             double[] channels = image.get(x, y);
-            int c = Color.argb((int) channels[3], (int) channels[0], (int) channels[1], (int) channels[2]);
-            if (!colorDetector.detectsColor(Color.red(c), Color.green(c), Color.blue(c))) {
-                return false;
+            if (channels != null) {
+                int c = Color.argb((int) channels[3], (int) channels[0], (int) channels[1], (int) channels[2]);
+                if (!colorDetector.detectsColor(Color.red(c), Color.green(c), Color.blue(c))) {
+                    return false;
+                }
+            }
+            else{
+                int df = 1;
             }
         }
         return true;
     }
 
-    static Point findColorsWithCV(Bitmap orcimage, int firstColor, int threshold, Rect rect, int[] points) {
+    static List<Match> findColorsWithCV(Bitmap orcimage, String firstColor, ColorPos[] points, float similar, Rect rect) {
+        int[] list = new int[points.length * 3];
+        for (int i = 0; i < points.length; i++) {
+            ColorPos p = points[i];
+            list[i * 3] = p.x;
+            list[i * 3 + 1] = p.y;
+            list[i * 3 + 2] = p.color;
+        }
+        return findColorsWithCV(orcimage, Color.parseColor(firstColor), similar, rect, list);
+    }
+
+    static List<Match> findColorsWithCV(Bitmap orcimage, int firstColor, float similar, Rect rect, int[] points) {
+        int threshold = (int) ((1 - similar) * 255);
         Mat orcMat = new Mat();
         Utils.bitmapToMat(orcimage, orcMat);
         Mat bi = new Mat();
@@ -655,22 +699,25 @@ final public class ToolUtls {
             matpoint = new MatOfPoint(nonZeroPos);
         }
 
-        Point[] repoints = matpoint.toArray();
-        if (rect != null) {
-            for (int i = 0; i < repoints.length; i++) {
-                repoints[i].x = repoints[i].x + rect.x;
-                repoints[i].y = repoints[i].y + rect.y;
+        List<Match> result = new ArrayList<>();
+        if (matpoint != null){
+            Point[] repoints = matpoint.toArray();
+            if (rect != null) {
+                for (int i = 0; i < repoints.length; i++) {
+                    repoints[i].x = repoints[i].x + rect.x;
+                    repoints[i].y = repoints[i].y + rect.y;
+                }
             }
-        }
 
-        for (Point firstPoint : repoints) {
-            if (firstPoint == null)
-                continue;
-            if (checksPath(orcMat, firstPoint, threshold, rect, points)) {
-                return firstPoint;
+            for (Point p : repoints) {
+                if (p == null)
+                    continue;
+                if (checksPath(orcMat, p, threshold, rect, points)) {
+                    result.add(new Match(p,similar));
+                }
             }
         }
-        return null;
+        return result;
     }
 
 }

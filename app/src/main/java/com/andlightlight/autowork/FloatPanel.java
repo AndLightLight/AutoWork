@@ -219,8 +219,8 @@ public class FloatPanel extends BasePanel{
                     }
                     Bitmap outmap = null;
                     if (featureDetector <= 0){
-                        List<ToolUtls.Match> reslutlist = ToolUtls.findColorsWithCV(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
-                        //List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
+                        //List<ToolUtls.Match> reslutlist = ToolUtls.findColorsWithCV(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
+                        List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
                         outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas cnvs = new Canvas(outmap);
                         Paint paint = new Paint();

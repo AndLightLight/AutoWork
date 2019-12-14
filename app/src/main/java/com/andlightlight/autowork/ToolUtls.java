@@ -638,7 +638,7 @@ final public class ToolUtls {
     }
 
 
-    static private boolean checksPath(Mat image, Point startingPoint, int threshold, Rect rect, int[] points) {
+    static private boolean checksPath(Bitmap image, Point startingPoint, int threshold, Rect rect, int[] points) {
         for (int i = 0; i < points.length; i += 3) {
             int x = points[i];
             int y = points[i + 1];
@@ -646,19 +646,13 @@ final public class ToolUtls {
             ColorDetector colorDetector = new ColorDetector.DifferenceDetector(color, threshold);
             x += startingPoint.x;
             y += startingPoint.y;
-            if (x >= image.width() || y >= image.height()
+            if (x >= image.getWidth() || y >= image.getHeight()
                     || x < 0 || y < 0) {
                 return false;
             }
-            double[] channels = image.get(x, y);
-            if (channels != null) {
-                int c = Color.argb((int) channels[3], (int) channels[0], (int) channels[1], (int) channels[2]);
-                if (!colorDetector.detectsColor(Color.red(c), Color.green(c), Color.blue(c))) {
-                    return false;
-                }
-            }
-            else{
-                int df = 1;
+            int c = image.getPixel(x, y);
+            if (!colorDetector.detectsColor(Color.red(c), Color.green(c), Color.blue(c))) {
+                return false;
             }
         }
         return true;
@@ -672,10 +666,10 @@ final public class ToolUtls {
             list[i * 3 + 1] = p.y;
             list[i * 3 + 2] = p.color;
         }
-        return findColorsWithCV(orcimage, Color.parseColor(firstColor), similar, rect, list);
+        return findColorsWithCV(orcimage, Color.parseColor(firstColor), similar, rect, list, -1);
     }
 
-    static List<Match> findColorsWithCV(Bitmap orcimage, int firstColor, float similar, Rect rect, int[] points) {
+    static List<Match> findColorsWithCV(Bitmap orcimage, int firstColor, float similar, Rect rect, int[] points, int findnum) {
         int threshold = (int) ((1 - similar) * 255);
         Mat orcMat = new Mat();
         Utils.bitmapToMat(orcimage, orcMat);
@@ -709,11 +703,15 @@ final public class ToolUtls {
                 }
             }
 
+
             for (Point p : repoints) {
                 if (p == null)
                     continue;
-                if (checksPath(orcMat, p, threshold, rect, points)) {
+                if (checksPath(orcimage, p, threshold, rect, points)) {
                     result.add(new Match(p,similar));
+                    findnum --;
+                    if (findnum == 0)
+                        return result;
                 }
             }
         }

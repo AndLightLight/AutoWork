@@ -1,32 +1,20 @@
 package com.andlightlight.autowork;
 
 import android.accessibilityservice.AccessibilityService;
-import android.accessibilityservice.GestureDescription;
-import android.app.Activity;
-import android.app.Application;
-import android.content.ComponentName;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
-import android.content.pm.ResolveInfo;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Path;
-import android.graphics.Point;
-import android.graphics.PointF;
 import android.graphics.Rect;
-import android.net.Uri;
-import android.util.Log;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
-import org.opencv.core.Mat;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.FeatureDetector;
+import org.opencv.imgproc.Imgproc;
 
 import java.io.File;
-import java.lang.reflect.Field;
-import java.sql.PreparedStatement;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -35,7 +23,7 @@ import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
 public abstract class ScriptInterface {
-    HashMap<String, FloatPanelService.PrepareImage> mLoadPreImage = new HashMap<>();
+    HashMap<String, ToolUtls.PrepareImage> mLoadPreImage = new HashMap<>();
     protected int mFeatureDetector = FeatureDetector.FAST;
     protected int mDescriptorExtractor = DescriptorExtractor.BRIEF;
     protected FeatureDetector mFd = FeatureDetector.create(mFeatureDetector);
@@ -49,6 +37,7 @@ public abstract class ScriptInterface {
     }
 
     public void start(Runnable endAction) {
+        minPanel();
         mEndAction = endAction;
         mLoadPreImage.clear();
         File dir = new File(FloatPanelService.Instance.getExternalFilesDir(null) + "/");
@@ -58,7 +47,7 @@ public abstract class ScriptInterface {
             if (bp != null) {
                 String picnamewithdot = f.getName();
                 String picname = picnamewithdot.substring(0, picnamewithdot.indexOf('.'));
-                FloatPanelService.PrepareImage preimage = ToolUtls.prepareBitmap(bp, mFd, mExtractor);
+                ToolUtls.PrepareImage preimage = ToolUtls.prepareBitmap(bp, mFd, mExtractor);
                 mLoadPreImage.put(picname, preimage);
             }
         }
@@ -81,53 +70,101 @@ public abstract class ScriptInterface {
             mEndAction.run();
     }
 
-
     protected void sleep(int time) throws InterruptedException {
         Thread.sleep(time);
     }
 
     protected void click(float x, float y) {
-        click(new GestureManager.Point[]{new GestureManager.Point(x, y, 100)});
+        slide(new GestureManager.Point[]{new GestureManager.Point(x, y, 100)});
     }
 
-    protected void click(GestureManager.Point[] points) {
+    protected void slide(GestureManager.Point[] points) {
         GestureManager.click(points);
     }
 
-    protected FloatPanelService.PrepareImage prepareSnapshotScreen() {
-        return prepareSnapshotScreen(-1, -1, -1, -1);
+    protected void slideX(float dx, int duration) {
+        slide(dx,duration,true);
     }
 
-    protected FloatPanelService.PrepareImage prepareSnapshotScreen(int left, int top, int right, int down) {
-        Bitmap ss = FloatPanelService.Instance.snapshotScreen();
+    protected void slideY(float dx, int duration) {
+        slide(dx,duration,false);
+    }
+
+    protected void slide(float d, int duration, boolean isX) {
+        Rect ssize = getScreenSize();
+        int centerx = ssize.width()/2;
+        int centery = ssize.height()/2;
+        int dirl = isX ? ssize.width() : ssize.height();
+        int slidelength = (int) (d * dirl);
+        int fromx = isX ? centerx - slidelength/2 : centerx;
+        int fromy = isX ? centery : centery - slidelength/2;
+        int endx = isX ? centerx + slidelength/2 : centerx;
+        int endy = isX ? centery : centery + slidelength/2;
+        slide(new GestureManager.Point[]{new GestureManager.Point(fromx,fromy,10),new GestureManager.Point(endx, endy, duration)});
+    }
+
+    protected Rect getScreenSize(){
+        return FloatPanelService.Instance.getScreenSize();
+    }
+
+    protected Bitmap snapshotScreen(int left, int top, int right, int down){
+        Bitmap ss =  FloatPanelService.Instance.snapshotScreen();
         if (ss == null) {
             ss = mScreeShopImageCache;
         }
         mScreeShopImageCache = ss;
         if (left != -1 && top != -1 && right != -1 && down != -1)
             ss = ToolUtls.cropBitmap(ss, left, top, right - left, down - top);
+        return ss;
+    }
 
+    protected ToolUtls.PrepareImage prepareSnapshotScreen() {
+        return prepareSnapshotScreen(-1, -1, -1, -1);
+    }
+
+    protected ToolUtls.PrepareImage prepareSnapshotScreen(int left, int top, int right, int down) {
+        Bitmap ss = snapshotScreen(left, top, right, down);
         return ToolUtls.prepareBitmap(ss, mFd, mExtractor);
     }
 
-    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, FloatPanelService.PrepareImage subpic, int similar, int needNum) {
-        return ToolUtls.findSubImageWithCV(orcpic, subpic, mFd, mExtractor, similar, needNum);
+    protected ToolUtls.ImgFtMatch findPicWithFeature(ToolUtls.PrepareImage orcpic, ToolUtls.PrepareImage subpic, int similar, int needNum) {
+        return ToolUtls.findSubImageWithFeature(orcpic, subpic, mFd, mExtractor, similar, needNum);
     }
 
-    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, String subpic, float similar) {
-        return FindPic(orcpic, subpic, similar, mDefaultNeedNum);
+    protected ToolUtls.ImgFtMatch findPicWithFeature(ToolUtls.PrepareImage orcpic, String subpic, float similar) {
+        return findPicWithFeature(orcpic, subpic, similar, mDefaultNeedNum);
     }
 
-    protected FloatPanelService.MatchResult FindPic(FloatPanelService.PrepareImage orcpic, String subpic, float similar, int needNum) {
-        return ToolUtls.findSubImageWithCV(orcpic, mLoadPreImage.get(subpic), mFd, mExtractor, similar, needNum);
+    protected ToolUtls.ImgFtMatch findPicWithFeature(ToolUtls.PrepareImage orcpic, String subpic, float similar, int needNum) {
+        return ToolUtls.findSubImageWithFeature(orcpic, mLoadPreImage.get(subpic), mFd, mExtractor, similar, needNum);
     }
 
-    protected FloatPanelService.MatchResult FindPic(int left, int top, int right, int down, String subpic, float similar) {
-        return FindPic(left, top, right, down, subpic, similar, mDefaultNeedNum);
+    protected ToolUtls.ImgFtMatch findPicWithFeature(int left, int top, int right, int down, String subpic, float similar) {
+        return findPicWithFeature(left, top, right, down, subpic, similar, mDefaultNeedNum);
     }
 
-    protected FloatPanelService.MatchResult FindPic(int left, int top, int right, int down, String subpic, float similar, int needNum) {
-        return ToolUtls.findSubImageWithCV(prepareSnapshotScreen(left, top, right, down), mLoadPreImage.get(subpic), mFd, mExtractor, similar, needNum);
+    protected ToolUtls.ImgFtMatch findPicWithFeature(int left, int top, int right, int down, String subpic, float similar, int needNum) {
+        return ToolUtls.findSubImageWithFeature(prepareSnapshotScreen(left, top, right, down), mLoadPreImage.get(subpic), mFd, mExtractor, similar, needNum);
+    }
+
+    protected List<ToolUtls.ImgMatch> findPic(int left, int top, int right, int down, String subpic, float similar) {
+        return findPic(left, top, right, down,subpic, Imgproc.TM_CCOEFF_NORMED, similar, ToolUtls.MAX_LEVEL_AUTO);
+    }
+
+    protected List<ToolUtls.ImgMatch> findPic(int left, int top, int right, int down, String subpic, int matchMethod, float similar, int maxLevel) {
+        return ToolUtls.findSubImage(snapshotScreen(left, top, right, down), mLoadPreImage.get(subpic).imageBitmap, matchMethod, similar, maxLevel);
+    }
+
+    protected List<ToolUtls.Match> findColors(String firstColor, ToolUtls.ColorPos[] points) {
+        return ToolUtls.findColors(snapshotScreen(-1, -1, -1, -1), firstColor, points, 0.9f, null);
+    }
+
+    protected List<ToolUtls.Match> findColors(String firstColor, ToolUtls.ColorPos[] points, float similar) {
+        return ToolUtls.findColors(snapshotScreen(-1, -1, -1, -1), firstColor, points, similar, null);
+    }
+
+    protected List<ToolUtls.Match> findColors(Bitmap orcimage, String firstColor, ToolUtls.ColorPos[] points, float similar, org.opencv.core.Rect rect) {
+        return ToolUtls.findColors(orcimage, firstColor, points, similar, rect);
     }
 
     public String getPackageName(String appName) {
@@ -149,12 +186,12 @@ public abstract class ScriptInterface {
 
     protected void waitText(final String[] uitxts) {
         final Semaphore semaphore = new Semaphore(0);
-        RegisterEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
+        registerEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
             @Override
             public void run() {
                 try {
                     AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
-                    boolean isfind = FindNode(rootNode, uitxts, null, new FindNodeCallBack() {
+                    boolean isfind = findNode(rootNode, uitxts, null, new FindNodeCallBack() {
                         private Set<String> mNeedUI = new HashSet<String>(){{for (String txt: uitxts) add(txt);}};
                         @Override
                         public boolean run(AccessibilityNodeInfo node) {
@@ -167,7 +204,7 @@ public abstract class ScriptInterface {
                     });
                     if (isfind) {
                         semaphore.release();
-                        RemoveEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,this);
+                        removeEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,this);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
@@ -194,7 +231,7 @@ public abstract class ScriptInterface {
 
     protected boolean clickCurrentUI(final String[] txtPatterns, final String classPattern, final boolean isClickAll) throws InterruptedException {
         AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
-        boolean isfind = FindNode(rootNode, txtPatterns, classPattern, new FindNodeCallBack() {
+        boolean isfind = findNode(rootNode, txtPatterns, classPattern, new FindNodeCallBack() {
             @Override
             public boolean run(AccessibilityNodeInfo node) throws InterruptedException {
 //                if (node.isClickable())
@@ -220,7 +257,7 @@ public abstract class ScriptInterface {
             isBlock = false;
         final boolean finalisBlock = isBlock;
         final Semaphore semaphore = new Semaphore(0);
-        RegisterEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
+        registerEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
             private int runtimes = times;
             @Override
             public void run() {
@@ -231,7 +268,7 @@ public abstract class ScriptInterface {
                             runtimes--;
                     }
                     if (runtimes == 0) {
-                        RemoveEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, this);
+                        removeEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, this);
                         if (finalisBlock)
                             semaphore.release();
                     }
@@ -249,7 +286,7 @@ public abstract class ScriptInterface {
         }
     }
 
-    protected boolean FindNode(AccessibilityNodeInfo node, String[] txtPatterns, String classPattern, FindNodeCallBack action) throws InterruptedException {
+    protected boolean findNode(AccessibilityNodeInfo node, String[] txtPatterns, String classPattern, FindNodeCallBack action) throws InterruptedException {
         if (node == null)
             node = FloatPanelService.Instance.getRootInActiveWindow();
         if (node != null) {
@@ -277,7 +314,7 @@ public abstract class ScriptInterface {
             } else {
                 for (int i = 0; i < node.getChildCount(); i++) {
                     if (node.getChild(i) != null) {
-                        boolean isfind = FindNode(node.getChild(i), txtPatterns, classPattern, action);
+                        boolean isfind = findNode(node.getChild(i), txtPatterns, classPattern, action);
                         if (isfind) return true;
                     }
                 }
@@ -286,11 +323,28 @@ public abstract class ScriptInterface {
         return false;
     }
 
-    protected void RegisterEvent(int event, Runnable action) {
+    protected boolean isNodeInScreen(String[] uitxts){
+        AccessibilityNodeInfo rootNode = FloatPanelService.Instance.getRootInActiveWindow();
+        try {
+            return findNode(rootNode, uitxts, null, new FindNodeCallBack() {
+                @Override
+                public boolean run(AccessibilityNodeInfo node) throws InterruptedException {
+                    Rect b = new Rect();
+                    node.getBoundsInScreen(b);
+                    return false;
+                }
+            });
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+
+    protected void registerEvent(int event, Runnable action) {
         FloatPanelService.Instance.RegisterEvent(event, action);
     }
 
-    protected void RemoveEvent(int event, Runnable action) {
+    protected void removeEvent(int event, Runnable action) {
         FloatPanelService.Instance.RemoveEvent(event, action);
     }
 
@@ -300,6 +354,14 @@ public abstract class ScriptInterface {
 
     protected void home(){
         FloatPanelService.Instance.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME);
+    }
+
+    protected void minPanel(){
+        FloatPanelService.Instance.getPanel().min();
+    }
+
+    protected void maxPanel(){
+        FloatPanelService.Instance.getPanel().max();
     }
 
     protected abstract void startImp() throws InterruptedException;

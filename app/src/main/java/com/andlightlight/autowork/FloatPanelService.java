@@ -5,6 +5,7 @@ import android.annotation.SuppressLint;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.PointF;
+import android.graphics.Rect;
 import android.hardware.display.DisplayManager;
 import android.hardware.display.VirtualDisplay;
 import android.media.Image;
@@ -44,22 +45,6 @@ public class FloatPanelService extends AccessibilityService {
     FloatPanel mFloatPanel;
 
     HashMap<Integer, Set<Runnable>> mEventMap = new HashMap<>();
-
-    public static class MatchResult{
-        Mat largeImage;
-        Mat smallImage;
-        MatOfKeyPoint keyPointsLarge;
-        MatOfKeyPoint keyPointsSmall;
-        MatOfDMatch matchesFiltered;
-        public PointF rePoint = new PointF();
-    }
-
-    public static class PrepareImage{
-        Mat imageMat;
-        Mat imageDesMat;
-        MatOfKeyPoint keyPointsMat;
-        KeyPoint[] keyPoints;
-    }
 
     public static FloatPanelService Instance;
 
@@ -101,6 +86,17 @@ public class FloatPanelService extends AccessibilityService {
         return mScale;
     }
 
+    public Rect getScreenSize(){
+        WindowManager window = (WindowManager) getSystemService(this.WINDOW_SERVICE);
+        DisplayMetrics dm = new DisplayMetrics();
+        window.getDefaultDisplay().getRealMetrics(dm);
+        return new Rect(0,0,dm.widthPixels,dm.heightPixels);
+    }
+
+    public FloatPanel getPanel(){
+        return mFloatPanel;
+    }
+
     @SuppressLint("WrongConstant")
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
@@ -109,14 +105,8 @@ public class FloatPanelService extends AccessibilityService {
         mResultData = intent.getParcelableExtra("data");
 
         mMediaProjection = ((MediaProjectionManager) getSystemService(this.MEDIA_PROJECTION_SERVICE)).getMediaProjection(mResultCode, mResultData);
-
-
-        WindowManager window = (WindowManager) getSystemService(this.WINDOW_SERVICE);
-        DisplayMetrics dm = new DisplayMetrics();
-        window.getDefaultDisplay().getRealMetrics(dm);
-
-        int width = dm.widthPixels / mScale;
-        int height = dm.heightPixels / mScale;
+        int width = getScreenSize().width() / mScale;
+        int height = getScreenSize().height() / mScale;
 
         if (mImageReader == null) {
             mImageReader = ImageReader.newInstance(width, height, 0x1, 2);

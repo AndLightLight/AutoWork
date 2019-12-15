@@ -21,11 +21,9 @@ import android.widget.ImageView;
 import android.widget.LinearLayout;
 
 import com.andlightlight.autowork.script.MYSLScript;
-import com.andlightlight.autowork.script.TestScript;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
-import org.opencv.core.Point;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.FeatureDetector;
 import org.opencv.features2d.Features2d;
@@ -38,7 +36,7 @@ public class FloatPanel extends BasePanel{
     static final String TAG = "FloatPanel";
 
     String mSaveFilePath;
-    String mSaveFileName = "ScreenShot";
+    boolean mMax = true;
 
     FloatPanelService mFloatPanelService;
 
@@ -125,19 +123,13 @@ public class FloatPanel extends BasePanel{
     };
 
     View.OnClickListener mOpenClickListener = new View.OnClickListener() {
-        boolean isOpen = true;
-
         @Override
         public void onClick(View v) {
-            if (isOpen) {
-                mLayoutParams.width = bt0.getWidth();
-                mLayoutParams.height = bt0.getHeight();
+            if (FloatPanel.this.mMax) {
+                min();
             } else {
-                mLayoutParams.width = OVER_PANEL_OPEN_WIDTH;
-                mLayoutParams.height = OVER_PANEL_OPEN_HEIGHT;
+                max();
             }
-            mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-            isOpen = isOpen == false;
         }
     };
 
@@ -218,9 +210,9 @@ public class FloatPanel extends BasePanel{
                         bitmap = ToolUtls.cropBitmap(bitmap,findLeft,findTop,findRight - findLeft,findBottom - findTop);
                     }
                     Bitmap outmap = null;
-                    if (featureDetector <= 0){
-                        //List<ToolUtls.Match> reslutlist = ToolUtls.findColorsWithCV(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
-                        List<ToolUtls.Match> reslutlist = ToolUtls.findSubImageWithCV(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
+                    //if (featureDetector <= 0){
+                        List<ToolUtls.Match> reslutlist = ToolUtls.findColors(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
+                        //List<ToolUtls.ImgMatch> reslutlist = ToolUtls.findSubImage(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
                         outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas cnvs = new Canvas(outmap);
                         Paint paint = new Paint();
@@ -231,18 +223,18 @@ public class FloatPanel extends BasePanel{
                         for (ToolUtls.Match r : reslutlist){
                             cnvs.drawRect(new Rect((int)(r.point.x),(int)(r.point.y),(int)(r.point.x + subimage.getWidth()), (int)(r.point.y + subimage.getHeight())),paint);
                         }
-                    }
-                    else{
-                        FloatPanelService.MatchResult mr = ToolUtls.findSubImageWithCV(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
-                        Mat largeImageRgb = new Mat();
-                        Mat smallImageRgb = new Mat();
-                        Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-                        Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-                        Mat outmapM = new Mat();
-                        Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
-                        outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
-                        Utils.matToBitmap(outmapM, outmap);
-                    }
+//                    }
+//                    else{
+//                        ToolUtls.ImgFtMatch mr = ToolUtls.findSubImageWithFeature(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
+//                        Mat largeImageRgb = new Mat();
+//                        Mat smallImageRgb = new Mat();
+//                        Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+//                        Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+//                        Mat outmapM = new Mat();
+//                        Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
+//                        outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
+//                        Utils.matToBitmap(outmapM, outmap);
+//                    }
 
                     if (mCompareResult == null) {
                         mCompareResult = new ImageView(mContext);
@@ -325,6 +317,30 @@ public class FloatPanel extends BasePanel{
             mIsStart = mIsStart == false;
         }
     };
+
+    public void min(){
+        mRoot.post(new Runnable() {
+            @Override
+            public void run() {
+                mLayoutParams.width = bt0.getWidth();
+                mLayoutParams.height = bt0.getHeight();
+                mWindowManager.updateViewLayout(mRoot, mLayoutParams);
+                mMax = false;
+            }
+        });
+    }
+
+    public void max(){
+        mRoot.post(new Runnable() {
+            @Override
+            public void run() {
+                mLayoutParams.width = OVER_PANEL_OPEN_WIDTH;
+                mLayoutParams.height = OVER_PANEL_OPEN_HEIGHT;
+                mWindowManager.updateViewLayout(mRoot, mLayoutParams);
+                mMax = true;
+            }
+        });
+    }
 
     @Override
     protected void onCreate() {

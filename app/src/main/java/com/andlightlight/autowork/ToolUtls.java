@@ -22,6 +22,7 @@ import org.opencv.features2d.DMatch;
 import org.opencv.features2d.DescriptorExtractor;
 import org.opencv.features2d.DescriptorMatcher;
 import org.opencv.features2d.FeatureDetector;
+import org.opencv.features2d.KeyPoint;
 import org.opencv.imgproc.Imgproc;
 
 import java.io.ByteArrayOutputStream;
@@ -42,32 +43,46 @@ import java.util.List;
 
 final public class ToolUtls {
 
-    static final String TAG = "FloatPanel";
+    static final String TAG = "ToolUtls";
     public static final int MAX_LEVEL_AUTO = -1;
 
-    public static class Match {
-        public final Point point;
-        public final double similarity;
+    public static class PrepareImage{
+        Bitmap imageBitmap;
+        Mat imageMat;
+        Mat imageDesMat;
+        MatOfKeyPoint keyPointsMat;
+        KeyPoint[] keyPoints;
+    }
 
-        public Match(Point point, double similarity) {
+    public static class Match{
+        public PointF point = null;
+    }
+
+    public static class ImgMatch extends Match {
+        public double similarity;
+        public ImgMatch(PointF point, double similarity) {
             this.point = point;
             this.similarity = similarity;
         }
+    }
 
-        @Override
-        public String toString() {
-            return "Match{" +
-                    "point=" + point +
-                    ", similarity=" + similarity +
-                    '}';
-        }
+    public static class ImgFtMatch extends Match {
+        Mat largeImage;
+        Mat smallImage;
+        MatOfKeyPoint keyPointsLarge;
+        MatOfKeyPoint keyPointsSmall;
+        MatOfDMatch matchesFiltered;
+    }
+
+    public static class ColorMatch extends Match {
+
     }
 
     public static class ColorPos{
         public int color;
         public int x;
         public int y;
-        ColorPos(int x, int y, String color){
+        public ColorPos(int x, int y, String color){
             this.color = Color.parseColor(color);
             this.x = x;
             this.y = y;
@@ -189,109 +204,8 @@ final public class ToolUtls {
         return strtodate;
     }
 
-    static class Segment {
-        public int x;
-        public int y;
-        public int width;
-        public int height;
-
-        public Segment(int x, int y, int width, int height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-    }
-
-    static public List<Segment> findSubimage
-            (
-                    Bitmap orcimage,
-                    Bitmap subimage,
-                    Double similarity,
-                    Boolean findAll,
-                    Integer startX,
-                    Integer startY
-            ) {
-        List<Segment> segments = new ArrayList<Segment>();
-        if (subimage != null) {
-            int subImagePixels = subimage.getWidth() * subimage.getHeight();
-            boolean[][] processed = new boolean[orcimage.getWidth()][orcimage.getHeight()];
-
-            int r1, g1, b1, r2, g2, b2;
-            // Full image
-            mainLoop:
-            for (int y = startY; y < orcimage.getHeight(); y++) {
-                for (int x = startX; x < orcimage.getWidth(); x++) {
-
-                    if (processed[x][y]) {
-                        continue;
-                    }
-
-                    int notMatched = 0;
-                    boolean match = true;
-                    // subimage
-                    if (y + subimage.getHeight() < orcimage.getHeight() && x + subimage.getWidth() < orcimage.getWidth()) {
-
-
-                        outerLoop:
-                        for (int i = 0; i < subimage.getHeight(); i++) {
-                            for (int j = 0; j < subimage.getWidth(); j++) {
-
-                                if (processed[x + j][y + i]) {
-                                    match = false;
-                                    break outerLoop;
-                                }
-
-                                r1 = Color.red(orcimage.getPixel(x + j, y + i));
-                                g1 = Color.green(orcimage.getPixel(x + j, y + i));
-                                b1 = Color.blue(orcimage.getPixel(x + j, y + i));
-
-                                r2 = Color.red(subimage.getPixel(j, i));
-                                g2 = Color.green(subimage.getPixel(j, i));
-                                b2 = Color.blue(subimage.getPixel(j, i));
-
-                                if
-                                (
-                                        Math.abs(r1 - r2) > 50 ||
-                                                Math.abs(g1 - g2) > 50 ||
-                                                Math.abs(b1 - b2) > 50
-                                ) {
-                                    notMatched++;
-
-                                    if (notMatched > (1 - similarity) * subImagePixels) {
-                                        match = false;
-                                        break outerLoop;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        match = false;
-                    }
-
-                    if (match) {
-                        segments.add(new Segment(x, y, subimage.getWidth(), subimage.getHeight()));
-
-                        if (!findAll) {
-                            break mainLoop;
-                        }
-
-                        for (int i = 0; i < subimage.getHeight(); i++) {
-                            for (int j = 0; j < subimage.getWidth(); j++) {
-                                processed[x + j][y + i] = true;
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
-
-        return segments;
-    }
-
-    static FloatPanelService.PrepareImage prepareBitmap(Bitmap image, FeatureDetector fd, DescriptorExtractor extractor){
-        FloatPanelService.PrepareImage preImg = new FloatPanelService.PrepareImage();
+    static PrepareImage prepareBitmap(Bitmap image, FeatureDetector fd, DescriptorExtractor extractor){
+        PrepareImage preImg = new PrepareImage();
         final MatOfKeyPoint keyPointsImage = new MatOfKeyPoint();
         Mat imageMat = new Mat();
         Utils.bitmapToMat(image, imageMat);
@@ -299,6 +213,7 @@ final public class ToolUtls {
         Log.d(TAG, "keyPoints.size() : " + keyPointsImage.size());
         Mat descriptors = new Mat();
         extractor.compute(imageMat, keyPointsImage, descriptors);
+        preImg.imageBitmap = image;
         preImg.imageMat = imageMat;
         preImg.imageDesMat = descriptors;
         preImg.keyPointsMat = keyPointsImage;
@@ -323,16 +238,16 @@ final public class ToolUtls {
 //        1 - >3
 //        10 - >4
 //        5 - >3
-    static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
-                                                            FloatPanelService.PrepareImage subpre,
-                                                            FeatureDetector fd,
-                                                            DescriptorExtractor extractor,
-                                                            float similar,
-                                                            int needNum
+    static ImgFtMatch findSubImageWithFeature(PrepareImage orcpre,
+                                                                 PrepareImage subpre,
+                                                                 FeatureDetector fd,
+                                                                 DescriptorExtractor extractor,
+                                                                 float similar,
+                                                                 int needNum
 
     ){
 
-        FloatPanelService.MatchResult re = new FloatPanelService.MatchResult();
+        ImgFtMatch re = new ImgFtMatch();
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
 
         Log.d(TAG, "descriptorsA.size() : " + orcpre.imageDesMat.size());
@@ -431,43 +346,44 @@ final public class ToolUtls {
             Log.d(TAG, "match found");
             for (DMatch dm : sortList){
                 org.opencv.core.Point p = orcpre.keyPoints[dm.queryIdx].pt;
-                re.rePoint.offset((float) p.x,(float) p.y);
+                re.point.x += (float) p.x;
+                re.point.y += (float) p.y;
             }
-            re.rePoint.x /= sortList.size();
-            re.rePoint.y /= sortList.size();
+            re.point.x /= sortList.size();
+            re.point.y /= sortList.size();
             return re;
         } else {
             return re;
         }
     }
 
-    static FloatPanelService.MatchResult findSubImageWithCV(FloatPanelService.PrepareImage orcpre,
-                                                            FloatPanelService.PrepareImage subpre,
-                                                            int featureDetector,
-                                                            int descriptorExtractor,
-                                                            float similar,
-                                                            int needNum
+    static ImgFtMatch findSubImageWithFeature(PrepareImage orcpre,
+                                                                 PrepareImage subpre,
+                                                                 int featureDetector,
+                                                                 int descriptorExtractor,
+                                                                 float similar,
+                                                                 int needNum
     ){
 
         FeatureDetector fd = FeatureDetector.create(featureDetector);
         DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
-        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar,needNum);
+        return findSubImageWithFeature(orcpre,subpre,fd,extractor,similar,needNum);
     }
 
-    static FloatPanelService.MatchResult findSubImageWithCV(Bitmap orcimage,
-                                                            Bitmap subimage,
-                                                            int featureDetector,
-                                                            int descriptorExtractor,
-                                                            float similar,
-                                                            int needNum
+    static ImgFtMatch findSubImageWithFeature(Bitmap orcimage,
+                                                                 Bitmap subimage,
+                                                                 int featureDetector,
+                                                                 int descriptorExtractor,
+                                                                 float similar,
+                                                                 int needNum
     ) {
         FeatureDetector fd = FeatureDetector.create(featureDetector);
         DescriptorMatcher matcher = DescriptorMatcher.create(DescriptorMatcher.BRUTEFORCE_HAMMING);
         DescriptorExtractor extractor = DescriptorExtractor.create(descriptorExtractor);
 
-        FloatPanelService.PrepareImage orcpre = prepareBitmap(orcimage,fd,extractor);
-        FloatPanelService.PrepareImage subpre = prepareBitmap(subimage,fd,extractor);
-        return findSubImageWithCV(orcpre,subpre,fd,extractor,similar,needNum);
+        PrepareImage orcpre = prepareBitmap(orcimage,fd,extractor);
+        PrepareImage subpre = prepareBitmap(subimage,fd,extractor);
+        return findSubImageWithFeature(orcpre,subpre,fd,extractor,similar,needNum);
     }
 
     private static int selectPyramidLevel(Mat img, Mat template) {
@@ -514,7 +430,7 @@ final public class ToolUtls {
         return result;
     }
 
-    private static Match getBestMatched(Mat tmResult, int matchMethod, float weakThreshold, Rect rect) {
+    private static ImgMatch getBestMatched(Mat tmResult, int matchMethod, float weakThreshold, Rect rect) {
         Core.MinMaxLocResult mmr = Core.minMaxLoc(tmResult);
         double value;
         Point pos;
@@ -532,7 +448,7 @@ final public class ToolUtls {
             pos.x += rect.x;
             pos.y += rect.y;
         }
-        return new Match(pos, value);
+        return new ImgMatch(new PointF((float) pos.x,(float) pos.y), value);
     }
 
     private static Rect getROI(Point p, Mat src, Mat currentTemplate) {
@@ -551,9 +467,9 @@ final public class ToolUtls {
         return new Rect(x, y, w, h);
     }
 
-    private static void getBestMatched(Mat tmResult, Mat template, int matchMethod, float weakThreshold, List<Match> outResult, int limit, Rect rect) {
+    private static void getBestMatched(Mat tmResult, Mat template, int matchMethod, float weakThreshold, List<ImgMatch> outResult, int limit, Rect rect) {
         for (int i = 0; i < limit; i++) {
-            Match bestMatched = getBestMatched(tmResult, matchMethod, weakThreshold, rect);
+            ImgMatch bestMatched = getBestMatched(tmResult, matchMethod, weakThreshold, rect);
             if (bestMatched == null) {
                 break;
             }
@@ -573,11 +489,11 @@ final public class ToolUtls {
         }
     }
 
-    static List<Match> findSubImageWithCV(Bitmap orcimage,
-                                                            Bitmap subimage,
-                                                            int matchMethod,
-                                                            float similar,
-                                                            int maxLevel
+    static List<ImgMatch> findSubImage(Bitmap orcimage,
+                                    Bitmap subimage,
+                                    int matchMethod,
+                                    float similar,
+                                    int maxLevel
     ) {
         Mat orcMat = new Mat();
         Utils.bitmapToMat(orcimage, orcMat);
@@ -589,12 +505,12 @@ final public class ToolUtls {
             maxLevel = selectPyramidLevel(orcMat, subMat);
         }
         //保存每一轮匹配到模板图片在原图片的位置
-        List<Match> finalMatchResult = new ArrayList<>();
-        List<Match> previousMatchResult = Collections.emptyList();
+        List<ImgMatch> finalMatchResult = new ArrayList<>();
+        List<ImgMatch> previousMatchResult = Collections.emptyList();
         boolean isFirstMatching = true;
         for (int level = maxLevel; level >= 0; level--) {
             // 放缩图片
-            List<Match> currentMatchResult = new ArrayList<>();
+            List<ImgMatch> currentMatchResult = new ArrayList<>();
             Mat src = getPyramidDownAtLevel(orcMat, level);
             Mat currentTemplate = getPyramidDownAtLevel(subMat, level);
             // 如果在上一轮中没有匹配到图片，则考虑是否退出匹配
@@ -608,7 +524,7 @@ final public class ToolUtls {
             } else {
                 for (Match match : previousMatchResult) {
                     // 根据上一轮的匹配点，计算本次匹配的区域
-                    Rect r = getROI(match.point, src, currentTemplate);
+                    Rect r = getROI(new Point(match.point.x,match.point.y), src, currentTemplate);
                     Mat m = new Mat(src, r);
                     Mat matchResult = matchTemplate(m, currentTemplate, matchMethod);
                     getBestMatched(matchResult, currentTemplate, matchMethod, 0.7f, currentMatchResult, 1, r);
@@ -617,11 +533,11 @@ final public class ToolUtls {
 
             // 把满足强阈值的点找出来，加到最终结果列表
             if (!currentMatchResult.isEmpty()) {
-                Iterator<Match> iterator = currentMatchResult.iterator();
+                Iterator<ImgMatch> iterator = currentMatchResult.iterator();
                 while (iterator.hasNext()) {
-                    Match match = iterator.next();
+                    ImgMatch match = iterator.next();
                     if (match.similarity >= similar) {
-                        pyrUp(match.point, level);
+                        pyrUp(new Point(match.point.x,match.point.y), level);
                         finalMatchResult.add(match);
                         iterator.remove();
                     }
@@ -658,7 +574,7 @@ final public class ToolUtls {
         return true;
     }
 
-    static List<Match> findColorsWithCV(Bitmap orcimage, String firstColor, ColorPos[] points, float similar, Rect rect) {
+    static List<Match> findColors(Bitmap orcimage, String firstColor, ColorPos[] points, float similar, Rect rect) {
         int[] list = new int[points.length * 3];
         for (int i = 0; i < points.length; i++) {
             ColorPos p = points[i];
@@ -666,10 +582,10 @@ final public class ToolUtls {
             list[i * 3 + 1] = p.y;
             list[i * 3 + 2] = p.color;
         }
-        return findColorsWithCV(orcimage, Color.parseColor(firstColor), similar, rect, list, -1);
+        return findColors(orcimage, Color.parseColor(firstColor), similar, rect, list, -1);
     }
 
-    static List<Match> findColorsWithCV(Bitmap orcimage, int firstColor, float similar, Rect rect, int[] points, int findnum) {
+    static List<Match> findColors(Bitmap orcimage, int firstColor, float similar, Rect rect, int[] points, int findnum) {
         int threshold = (int) ((1 - similar) * 255);
         Mat orcMat = new Mat();
         Utils.bitmapToMat(orcimage, orcMat);
@@ -703,12 +619,37 @@ final public class ToolUtls {
                 }
             }
 
+            int rangemaxx = -99999;
+            int rangemaxy = -99999;
+            int rangeminx = 99999;
+            int rangeminy = 99999;
+            for (int i = 0; i < points.length; i += 3) {
+                int x = points[i];
+                int y = points[i + 1];
+                if (x > rangemaxx)
+                    rangemaxx = x;
+                if (y > rangemaxy)
+                    rangemaxy = y;
+                if (x < rangeminx)
+                    rangeminx = x;
+                if (y < rangeminy)
+                    rangeminy = y;
+            }
 
+            int rangex = Math.max(Math.max(Math.abs(rangemaxx - rangeminx),Math.abs(rangemaxx)),Math.abs(rangeminx));
+            int rangey = Math.max(Math.max(Math.abs(rangemaxy - rangeminy),Math.abs(rangemaxy)),Math.abs(rangeminy));
+
+            Point lastPoint = null;
             for (Point p : repoints) {
                 if (p == null)
                     continue;
                 if (checksPath(orcimage, p, threshold, rect, points)) {
-                    result.add(new Match(p,similar));
+                    if (lastPoint != null){
+                        if (Math.abs(p.x - lastPoint.x) < rangex && Math.abs(p.y - lastPoint.y) < rangey)
+                            continue;
+                    }
+                    lastPoint = p;
+                    result.add(new ImgMatch(new PointF((float)p.x,(float)p.y),similar));
                     findnum --;
                     if (findnum == 0)
                         return result;

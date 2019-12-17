@@ -146,7 +146,7 @@ public class FloatPanelService extends AccessibilityService {
         }
     }
 
-    public void RegisterEvent(int event, final Runnable action){
+    public synchronized void RegisterEvent(int event, final Runnable action){
         Set v = mEventMap.get(event);
         if (v == null)
             mEventMap.put(event,new HashSet<Runnable>(){{add(action);}});
@@ -154,23 +154,25 @@ public class FloatPanelService extends AccessibilityService {
             v.add(action);
     }
 
-    public void RemoveEvent(int event, final Runnable action){
+    public synchronized void RemoveEvent(int event, final Runnable action){
         Set v = mEventMap.get(event);
         if (v != null)
             v.remove(action);
     }
 
-    public void RemoveAllEvent(){
+    public synchronized void RemoveAllEvent(){
         mEventMap.clear();
     }
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-       Set v = mEventMap.get(event.getEventType());
-        if (v != null) {
-            for (Object a : v) {
-                Runnable action = (Runnable) a;
-                action.run();
+        synchronized (this) {
+            Set v = mEventMap.get(event.getEventType());
+            if (v != null) {
+                for (Object a : v) {
+                    Runnable action = (Runnable) a;
+                    action.run();
+                }
             }
         }
         Log.i("test2",String.format("event:%s, package:%s, class:%s", event.toString(), event.getPackageName(), event.getClassName()));

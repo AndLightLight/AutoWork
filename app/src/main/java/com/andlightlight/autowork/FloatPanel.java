@@ -111,7 +111,8 @@ public class FloatPanel extends BasePanel{
                     mLayoutParams.x = mLayoutParams.x + movedX;
                     mLayoutParams.y = mLayoutParams.y + movedY;
                     mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-                    isMove = true;
+                    if ((movedX != 0 || movedY != 0) && isMove == false)
+                        isMove = true;
                     break;
                 case MotionEvent.ACTION_UP:
                     return isMove;
@@ -274,25 +275,20 @@ public class FloatPanel extends BasePanel{
 
     View.OnClickListener mRunClickListener = new View.OnClickListener() {
         boolean mIsStart = false;
-        Thread thread;
+        ScriptInterface script;
         @Override
         public void onClick(View v) {
             if (mIsStart == false){
-                thread = new Thread(new Runnable() {
+                script = new MYSLScript();
+                script.start(new Runnable() {
                     @Override
                     public void run() {
-                        new MYSLScript().start(new Runnable() {
-                            @Override
-                            public void run() {
-                                mIsStart = false;
-                            }
-                        });
+                        mIsStart = false;
                     }
                 });
-                thread.start();
             }
             else{
-                thread.interrupt();
+                script.interrupt();
             }
             mIsStart = mIsStart == false;
         }

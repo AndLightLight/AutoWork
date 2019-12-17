@@ -7,6 +7,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.util.ArraySet;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
 
@@ -22,7 +23,7 @@ import java.util.Set;
 import java.util.concurrent.Semaphore;
 import java.util.regex.Pattern;
 
-public abstract class ScriptInterface {
+public abstract class ScriptInterface extends Thread {
     HashMap<String, ToolUtls.PrepareImage> mLoadPreImage = new HashMap<>();
     protected int mFeatureDetector = FeatureDetector.FAST;
     protected int mDescriptorExtractor = DescriptorExtractor.BRIEF;
@@ -31,14 +32,16 @@ public abstract class ScriptInterface {
     protected Bitmap mScreeShopImageCache;
     protected int mDefaultNeedNum = 4;
     protected Runnable mEndAction;
+    protected Set<Semaphore> mSemaphoreSet = new ArraySet<>();
+    protected boolean mInterrupt = false;
 
     protected interface FindNodeCallBack {
         boolean run(AccessibilityNodeInfo node) throws InterruptedException;
     }
 
-    public void start(Runnable endAction) {
+    @Override
+    public void run() {
         minPanel();
-        mEndAction = endAction;
         mLoadPreImage.clear();
         File dir = new File(FloatPanelService.Instance.getExternalFilesDir(null) + "/");
         File[] files = dir.listFiles();
@@ -59,6 +62,28 @@ public abstract class ScriptInterface {
         end();
     }
 
+    @Override
+    public synchronized void start(){
+        start(null);
+    }
+
+    @Override
+    public void interrupt() {
+        mInterrupt = true;
+        cleanSemaphore();
+        super.interrupt();
+    }
+
+    @Override
+    public boolean isInterrupted(){
+        return super.isInterrupted() || mInterrupt;
+    }
+
+    public synchronized void start(Runnable endAction) {
+        super.start();
+        mEndAction = endAction;
+    }
+
     protected void end(){
         FloatPanelService.Instance.RemoveAllEvent();
         try {
@@ -70,7 +95,24 @@ public abstract class ScriptInterface {
             mEndAction.run();
     }
 
+    protected Semaphore createSemaphore(int permits) throws InterruptedException {
+        if (isInterrupted()) {
+            throw new InterruptedException();
+        }
+        Semaphore sp = new Semaphore(permits);
+        mSemaphoreSet.add(sp);
+        return sp;
+    }
+
+    protected void cleanSemaphore(){
+        for (Semaphore sp : mSemaphoreSet)
+            sp.release();
+    }
+
     protected void sleep(int time) throws InterruptedException {
+        if (isInterrupted()) {
+            throw new InterruptedException();
+        }
         Thread.sleep(time);
     }
 
@@ -184,8 +226,8 @@ public abstract class ScriptInterface {
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
     }
 
-    protected void waitText(final String[] uitxts) {
-        final Semaphore semaphore = new Semaphore(0);
+    protected void waitText(final String[] uitxts) throws InterruptedException {
+        final Semaphore semaphore = createSemaphore(0);
         registerEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
             @Override
             public void run() {
@@ -219,9 +261,7 @@ public abstract class ScriptInterface {
         }
     }
 
-
-
-    protected void click(String txtPattern) {
+    protected void click(String txtPattern) throws InterruptedException {
         click(new String[]{txtPattern}, null, 1, true, false);
     }
 
@@ -239,7 +279,8 @@ public abstract class ScriptInterface {
 //                else {
                     Rect b = new Rect();
                     node.getBoundsInScreen(b);
-                    click(b.centerX(), b.centerY());
+                    if (b.bottom < FloatPanelService.Instance.getScreenSize().height())
+                        click(b.centerX(), b.centerY());
 //                }
                 if (!isClickAll)
                     return true;
@@ -252,11 +293,11 @@ public abstract class ScriptInterface {
         return isfind;
     }
 
-    protected void click(final String[] txtPatterns, final String classPattern, final int times, boolean isBlock, final boolean isClickAll) {
+    protected void click(final String[] txtPatterns, final String classPattern, final int times, boolean isBlock, final boolean isClickAll) throws InterruptedException {
         if (isClickAll)
             isBlock = false;
         final boolean finalisBlock = isBlock;
-        final Semaphore semaphore = new Semaphore(0);
+        final Semaphore semaphore = createSemaphore(0);
         registerEvent(AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED, new Runnable() {
             private int runtimes = times;
             @Override
@@ -331,6 +372,8 @@ public abstract class ScriptInterface {
                 public boolean run(AccessibilityNodeInfo node) throws InterruptedException {
                     Rect b = new Rect();
                     node.getBoundsInScreen(b);
+                    if (b.bottom < FloatPanelService.Instance.getScreenSize().height())
+                        return true;
                     return false;
                 }
             });

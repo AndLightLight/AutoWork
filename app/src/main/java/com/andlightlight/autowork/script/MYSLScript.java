@@ -15,14 +15,14 @@ import java.util.List;
 public class MYSLScript extends ScriptInterface {
     @Override
     protected void startImp() throws InterruptedException {
-        //OpenActivity("alipay://platformapi/startapp?appId=60000002");
         OpenApp("支付宝");
         click("蚂蚁森林");
         waitText(new String[]{"种树","合种"});
         clickCurrentUI("收集能量\\d+克", true);
-        sleep(2000);
+        sleep(1000);
         clickCurrentUI("查看更多好友",false);
-        sleep(2000);
+        sleep(1000);
+        boolean run = true;
         while (true){
             List<ToolUtls.Match> handpos = findColors("#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")});
             while (!handpos.isEmpty()){
@@ -32,14 +32,19 @@ public class MYSLScript extends ScriptInterface {
                 handpos.remove(0);
                 waitText(new String[]{"浇水"});
                 clickCurrentUI("收集能量\\d+克", true);
-                sleep(5000);
+                sleep(300);
                 back();
             }
-            slideY(-0.6f,500);
-            sleep(2000);
-            if (isNodeInScreen(new String[]{"没有更多了"}))
+            if (run == false)
                 break;
+            slideY(-0.6f,500);
+            sleep(500);
+            if (isNodeInScreen(new String[]{"没有更多了"}))
+                run = false;
         }
+        back();
+        click("合种");
+        click("浇水");
     }
 
     @Override

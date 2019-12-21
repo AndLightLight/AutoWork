@@ -1,12 +1,16 @@
 package com.andlightlight.autowork;
 
 import android.accessibilityservice.AccessibilityService;
+import android.app.ActivityManager;
+import android.content.Context;
 import android.content.Intent;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 import android.util.ArraySet;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.accessibility.AccessibilityNodeInfo;
@@ -209,21 +213,13 @@ public abstract class ScriptInterface extends Thread {
         return ToolUtls.findColors(orcimage, firstColor, points, similar, rect);
     }
 
-    public String getPackageName(String appName) {
-        PackageManager packageManager = FloatPanelService.Instance.getPackageManager();
-        List<ApplicationInfo> installedApplications = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
-        for (ApplicationInfo applicationInfo : installedApplications) {
-            if (packageManager.getApplicationLabel(applicationInfo).toString().equals(appName)) {
-                return applicationInfo.packageName;
+    protected void OpenApp(final String appName) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                FloatPanelService.Instance.startActivity(new Intent(FloatPanelService.Instance,RunAppActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("appName",appName));
             }
-        }
-        return null;
-    }
-
-    protected void OpenApp(String appName) {
-        PackageManager packageManager = FloatPanelService.Instance.getPackageManager();
-        FloatPanelService.Instance.startActivity(packageManager.getLaunchIntentForPackage(getPackageName(appName))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
+        });
     }
 
     protected void waitText(final String[] uitxts) throws InterruptedException {

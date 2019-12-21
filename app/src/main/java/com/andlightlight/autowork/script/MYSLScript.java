@@ -24,7 +24,7 @@ public class MYSLScript extends ScriptInterface {
         sleep(1000);
         boolean run = true;
         while (true){
-            List<ToolUtls.Match> handpos = findColors("#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")});
+            List<ToolUtls.Match> handpos = findColors("#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50, 38, "#1DA06D"),new ToolUtls.ColorPos(20,10, "#FFFFFF"),new ToolUtls.ColorPos(50,32, "#FFFFFF"),new ToolUtls.ColorPos(30,32, "#FFFFFF")});
             while (!handpos.isEmpty()){
                 sleep(1000);
                 PointF p = handpos.get(0).point;
@@ -38,7 +38,7 @@ public class MYSLScript extends ScriptInterface {
             if (run == false)
                 break;
             slideY(-0.6f,500);
-            sleep(500);
+            sleep(600);
             if (isNodeInScreen(new String[]{"没有更多了"}))
                 run = false;
         }

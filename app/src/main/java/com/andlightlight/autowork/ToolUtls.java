@@ -1,5 +1,8 @@
 package com.andlightlight.autowork;
 
+import android.content.Context;
+import android.content.pm.ApplicationInfo;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -101,6 +104,17 @@ final public class ToolUtls {
         } catch (Exception e) {
         }
         return ret;
+    }
+
+    public static String getPackageName(Context context, String appName) {
+        PackageManager packageManager = context.getPackageManager();
+        List<ApplicationInfo> installedApplications = packageManager.getInstalledApplications(PackageManager.GET_META_DATA);
+        for (ApplicationInfo applicationInfo : installedApplications) {
+            if (packageManager.getApplicationLabel(applicationInfo).toString().equals(appName)) {
+                return applicationInfo.packageName;
+            }
+        }
+        return null;
     }
 
     /**

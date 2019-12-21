@@ -211,8 +211,8 @@ public class FloatPanel extends BasePanel{
                         bitmap = ToolUtls.cropBitmap(bitmap,findLeft,findTop,findRight - findLeft,findBottom - findTop);
                     }
                     Bitmap outmap = null;
-                    //if (featureDetector <= 0){
-                        List<ToolUtls.Match> reslutlist = ToolUtls.findColors(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50,32, "#FFFFFF")},0.9f,null);
+                    if (featureDetector <= 0){
+                        List<ToolUtls.Match> reslutlist = ToolUtls.findColors(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50, 38, "#1DA06D"),new ToolUtls.ColorPos(20,10, "#FFFFFF"),new ToolUtls.ColorPos(50,32, "#FFFFFF"),new ToolUtls.ColorPos(30,32, "#FFFFFF")},0.9f,null);
                         //List<ToolUtls.ImgMatch> reslutlist = ToolUtls.findSubImage(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
                         outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas cnvs = new Canvas(outmap);
@@ -224,18 +224,18 @@ public class FloatPanel extends BasePanel{
                         for (ToolUtls.Match r : reslutlist){
                             cnvs.drawRect(new Rect((int)(r.point.x),(int)(r.point.y),(int)(r.point.x + subimage.getWidth()), (int)(r.point.y + subimage.getHeight())),paint);
                         }
-//                    }
-//                    else{
-//                        ToolUtls.ImgFtMatch mr = ToolUtls.findSubImageWithFeature(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
-//                        Mat largeImageRgb = new Mat();
-//                        Mat smallImageRgb = new Mat();
-//                        Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-//                        Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
-//                        Mat outmapM = new Mat();
-//                        Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
-//                        outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
-//                        Utils.matToBitmap(outmapM, outmap);
-//                    }
+                    }
+                    else{
+                        ToolUtls.ImgFtMatch mr = ToolUtls.findSubImageWithFeature(bitmap, subimage, featureDetector, descriptorExtractor, simil,4);
+                        Mat largeImageRgb = new Mat();
+                        Mat smallImageRgb = new Mat();
+                        Imgproc.cvtColor(mr.largeImage, largeImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+                        Imgproc.cvtColor(mr.smallImage, smallImageRgb, Imgproc.COLOR_RGBA2RGB, 1);
+                        Mat outmapM = new Mat();
+                        Features2d.drawMatches(largeImageRgb, mr.keyPointsLarge, smallImageRgb, mr.keyPointsSmall, mr.matchesFiltered, outmapM);
+                        outmap = Bitmap.createBitmap(outmapM.width(), outmapM.height(), Bitmap.Config.ARGB_8888);
+                        Utils.matToBitmap(outmapM, outmap);
+                    }
 
                     if (mCompareResult == null) {
                         mCompareResult = new ImageView(mContext);

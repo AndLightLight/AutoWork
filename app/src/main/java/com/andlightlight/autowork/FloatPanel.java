@@ -49,24 +49,41 @@ public class FloatPanel extends BasePanel{
 
     public static FloatPanel Instance;
 
-
+    @UIMake(R.id.linear1)
     LinearLayout linearLayoutRoot;
+    @UIMake(R.id.button0,click = "mOpenClickListener",touch = "mMoveTouchListener")
     Button bt0;
+    @UIMake(R.id.button1,click = "mCompareClickListener")
     Button bt1;
+    @UIMake(R.id.button2,click = "mRecordClickListener")2
     Button bt2;
+    @UIMake(R.id.button3,click = "mJieTuClickListener")
     Button bt3;
+    @UIMake(R.id.button4,click = "mBoFangClickListener")
     Button bt4;
+    @UIMake(R.id.button5,click = "mFocuseClickListener")
     Button bt5;
+    @UIMake(R.id.button6,click = "mRunClickListener")
     Button bt6;
+    @UIMake(R.id.button7,click = "mCloseClickListener")
     Button bt7;
+    @UIMake(R.id.button8,click = "mPixelClickListener")
     Button bt8;
+    @UIMake("editText0")
     EditText et0;
+    @UIMake("editText1")
     EditText et1;
+    @UIMake("editText2")
     EditText et2;
+    @UIMake("editText3")
     EditText et3;
+    @UIMake("editText4")
     EditText et4;
+    @UIMake("editText5")
     EditText et5;
+    @UIMake("editText6")
     EditText et6;
+    @UIMake("editText7")
     EditText et7;
 
     public FloatPanel(Context context) {
@@ -357,35 +374,6 @@ public class FloatPanel extends BasePanel{
             LayoutInflater inflater = LayoutInflater.from(mContext);
             mRoot = inflater.inflate(R.layout.floatpanel_main, null);
             mWindowManager.addView(mRoot, mLayoutParams);
-
-            linearLayoutRoot = mRoot.findViewById(R.id.linear1);
-            bt0 = mRoot.findViewById(R.id.button0);
-            bt1 = mRoot.findViewById(R.id.button1);
-            bt2 = mRoot.findViewById(R.id.button2);
-            bt3 = mRoot.findViewById(R.id.button3);
-            bt4 = mRoot.findViewById(R.id.button4);
-            bt5 = mRoot.findViewById(R.id.button5);
-            bt6 = mRoot.findViewById(R.id.button6);
-            bt7 = mRoot.findViewById(R.id.button7);
-            bt8 = mRoot.findViewById(R.id.button8);
-            et0 = mRoot.findViewById(R.id.editText0);
-            et1 = mRoot.findViewById(R.id.editText1);
-            et2 = mRoot.findViewById(R.id.editText2);
-            et3 = mRoot.findViewById(R.id.editText3);
-            et4 = mRoot.findViewById(R.id.editText4);
-            et5 = mRoot.findViewById(R.id.editText5);
-            et6 = mRoot.findViewById(R.id.editText6);
-            et7 = mRoot.findViewById(R.id.editText7);
-            bt0.setOnClickListener(mOpenClickListener);
-            bt5.setOnClickListener(mFocuseClickListener);
-            bt2.setOnClickListener(mRecordClickListener);
-            bt4.setOnClickListener(mBoFangClickListener);
-            bt1.setOnClickListener(mCompareClickListener);
-            bt3.setOnClickListener(mJieTuClickListener);
-            bt0.setOnTouchListener(mMoveTouchListener);
-            bt6.setOnClickListener(mRunClickListener);
-            bt7.setOnClickListener(mCloseClickListener);
-            bt8.setOnClickListener(mPixelClickListener);
         }
     }
 

@@ -7,6 +7,7 @@ import android.graphics.PixelFormat;
 import android.os.Build;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
@@ -62,6 +63,19 @@ public class ScreenShotPanel extends BasePanel {
         mLayoutParams.x = START_X;
         mLayoutParams.y = START_Y;
 
+        LayoutInflater inflater = LayoutInflater.from(mContext);
+        mRoot = inflater.inflate(R.layout.functionpanel, null);
+        mWindowManager.addView(mRoot, mLayoutParams);
+
+
+
+
+
+
+
+
+
+        if (true) return;
         mRoot = new FrameLayout(mContext);
         mWindowManager.addView(mRoot, mLayoutParams);
 

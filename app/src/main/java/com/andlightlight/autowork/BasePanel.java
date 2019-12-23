@@ -4,6 +4,8 @@ import android.content.Context;
 import android.view.View;
 import android.view.WindowManager;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -16,6 +18,7 @@ abstract public class BasePanel {
     View mRoot;
     Context mContext;
 
+    @Retention(RetentionPolicy.RUNTIME)
     public @interface UIMake {
         int value() default -1;
         String click() default "";
@@ -34,38 +37,51 @@ abstract public class BasePanel {
             onCreate();
             mIsCreate = true;
 
-            for (Field field : this.getClass().getFields()){
+            for (Field field : this.getClass().getDeclaredFields()){
+                field.setAccessible(true);
                 UIMake uiMake = field.getAnnotation(UIMake.class);
                 if (uiMake != null){
-                    int value = uiMake.value();
-                    String click = uiMake.click();
-                    String touch = uiMake.touch();
-                    if (value == -1)
-                        value = mContext.getResources().getIdentifier(field.getName(), "layout", mContext.getPackageName());
                     try {
+                        int value = uiMake.value();
+                        String click = uiMake.click();
+                        String touch = uiMake.touch();
+                        if (value == -1) {
+                            for (Field idfield : R.id.class.getDeclaredFields()){
+                                idfield.setAccessible(true);
+                                if (idfield.getName().compareTo(field.getName()) == 0){
+                                    value = (int) idfield.get(new R.id());
+                                    break;
+                                }
+                            }
+                        }
+
                         field.setAccessible(true);
                         field.set(this,mRoot.findViewById(value));
+                        fieldInvoke(field,"setOnClickListener",View.OnClickListener.class, click);
+                        fieldInvoke(field,"setOnTouchListener",View.OnTouchListener.class, touch);
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();
                     }
-                    fieldInvoke(field,"setOnClickListener",click);
-                    fieldInvoke(field,"setOnTouchListener",touch);
                 }
             }
+            onAfterCreate();
         }
         if (mRoot != null)
             mRoot.setVisibility(View.VISIBLE);
         onShow();
     }
 
-    private void fieldInvoke(Field field, String methodName, String paramFieldName){
+    protected void onAfterCreate(){};
+
+    private void fieldInvoke(Field field, String methodName, Class methodClass, String paramFieldName){
         if (paramFieldName == "")
             return;
         Class c = field.getType();
         try {
-            Field classfield = this.getClass().getField(paramFieldName);
+            Field classfield = this.getClass().getDeclaredField(paramFieldName);
+            classfield.setAccessible(true);
             if (classfield != null){
-                Method method = c.getMethod("setOnClickListener", View.OnClickListener.class);
+                Method method = c.getMethod(methodName, methodClass);
                 method.setAccessible(true);
                 method.invoke(field.get(this),classfield.get(this));
             }

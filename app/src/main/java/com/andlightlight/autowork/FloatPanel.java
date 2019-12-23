@@ -51,39 +51,39 @@ public class FloatPanel extends BasePanel{
 
     @UIMake(R.id.linear1)
     LinearLayout linearLayoutRoot;
-    @UIMake(R.id.button0,click = "mOpenClickListener",touch = "mMoveTouchListener")
+    @UIMake(value = R.id.button0,click = "mOpenClickListener",touch = "mMoveTouchListener")
     Button bt0;
-    @UIMake(R.id.button1,click = "mCompareClickListener")
+    @UIMake(value = R.id.button1,click = "mCompareClickListener")
     Button bt1;
-    @UIMake(R.id.button2,click = "mRecordClickListener")2
+    @UIMake(value = R.id.button2,click = "mRecordClickListener")
     Button bt2;
-    @UIMake(R.id.button3,click = "mJieTuClickListener")
+    @UIMake(value = R.id.button3,click = "mJieTuClickListener")
     Button bt3;
-    @UIMake(R.id.button4,click = "mBoFangClickListener")
+    @UIMake(value = R.id.button4,click = "mBoFangClickListener")
     Button bt4;
-    @UIMake(R.id.button5,click = "mFocuseClickListener")
+    @UIMake(value = R.id.button5,click = "mFocuseClickListener")
     Button bt5;
-    @UIMake(R.id.button6,click = "mRunClickListener")
+    @UIMake(value = R.id.button6,click = "mRunClickListener")
     Button bt6;
-    @UIMake(R.id.button7,click = "mCloseClickListener")
+    @UIMake(value = R.id.button7,click = "mCloseClickListener")
     Button bt7;
-    @UIMake(R.id.button8,click = "mPixelClickListener")
+    @UIMake(value = R.id.button8,click = "mPixelClickListener")
     Button bt8;
-    @UIMake("editText0")
+    @UIMake(value = R.id.editText0)
     EditText et0;
-    @UIMake("editText1")
+    @UIMake(value = R.id.editText1)
     EditText et1;
-    @UIMake("editText2")
+    @UIMake(value = R.id.editText2)
     EditText et2;
-    @UIMake("editText3")
+    @UIMake(value = R.id.editText3)
     EditText et3;
-    @UIMake("editText4")
+    @UIMake(value = R.id.editText4)
     EditText et4;
-    @UIMake("editText5")
+    @UIMake(value = R.id.editText5)
     EditText et5;
-    @UIMake("editText6")
+    @UIMake(value = R.id.editText6)
     EditText et6;
-    @UIMake("editText7")
+    @UIMake(value = R.id.editText7)
     EditText et7;
 
     public FloatPanel(Context context) {

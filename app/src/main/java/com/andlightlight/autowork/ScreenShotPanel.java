@@ -5,12 +5,16 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.PixelFormat;
 import android.os.Build;
+import android.support.constraint.ConstraintLayout;
+import android.support.constraint.ConstraintSet;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewGroup;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.FrameLayout;
 
 import java.io.IOException;
@@ -26,6 +30,17 @@ public class ScreenShotPanel extends BasePanel {
     static final int START_X = 300;
     static final int START_Y= 300;
     static final float ALPHA= 0.1f;
+
+    @UIMake
+    Button buttonup;
+    @UIMake
+    Button buttondown;
+    @UIMake
+    Button buttonleft;
+    @UIMake
+    Button buttonright;
+    @UIMake
+    ConstraintLayout mainlayout;
 
     public ScreenShotPanel(Context context) {
         super(context);
@@ -56,21 +71,14 @@ public class ScreenShotPanel extends BasePanel {
             mLayoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         }
         mLayoutParams.format = PixelFormat.RGBA_8888;
-        mLayoutParams.gravity = Gravity.LEFT | Gravity.TOP;
+        mLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
         mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-        mLayoutParams.width = START_WIDTH;
-        mLayoutParams.height = START_HEIGHT;
-        mLayoutParams.x = START_X;
-        mLayoutParams.y = START_Y;
+        mLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
+        mLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
 
         LayoutInflater inflater = LayoutInflater.from(mContext);
         mRoot = inflater.inflate(R.layout.functionpanel, null);
         mWindowManager.addView(mRoot, mLayoutParams);
-
-
-
-
-
 
 
 
@@ -178,6 +186,68 @@ public class ScreenShotPanel extends BasePanel {
         });
     }
 
+    @Override
+    protected void onAfterCreate() {
+        mainlayout.setPivotX(1);
+        mainlayout.setPivotY(1);
+        mainlayout.setOnTouchListener(new View.OnTouchListener() {
+            private int x;
+            private int y;
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        x = (int) event.getRawX();
+                        y = (int) event.getRawY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        int nowX = (int) event.getRawX();
+                        int nowY = (int) event.getRawY();
+                        int movedX = nowX - x;
+                        int movedY = nowY - y;
+                        x = nowX;
+                        y = nowY;
+                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+                        params.leftMargin += movedX;
+                        params.topMargin += movedY;
+                        mainlayout.requestLayout();
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
+
+
+        buttonup.setOnTouchListener(new View.OnTouchListener() {
+            private int x;
+            private int y;
+            @Override
+            public boolean onTouch(View view, MotionEvent event) {
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        x = (int) event.getRawX();
+                        y = (int) event.getRawY();
+                        break;
+                    case MotionEvent.ACTION_MOVE:
+                        int nowX = (int) event.getRawX();
+                        int nowY = (int) event.getRawY();
+                        int movedX = nowX - x;
+                        int movedY = nowY - y;
+                        x = nowX;
+                        y = nowY;
+                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+                        params.height += movedY;
+                        mainlayout.requestLayout();
+                        break;
+                    default:
+                        break;
+                }
+                return false;
+            }
+        });
+    }
 
     public void screenShot(final String path){
         int []location=new int[2];

@@ -106,39 +106,14 @@ public class FloatPanel extends BasePanel{
 
     }
 
-    View.OnTouchListener mMoveTouchListener = new View.OnTouchListener() {
-        private int x;
-        private int y;
-        boolean isMove = false;
+    View.OnTouchListener mMoveTouchListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
         @Override
-        public boolean onTouch(View view, MotionEvent event) {
-            switch (event.getAction()) {
-                case MotionEvent.ACTION_DOWN:
-                    x = (int) event.getRawX();
-                    y = (int) event.getRawY();
-                    isMove = false;
-                    break;
-                case MotionEvent.ACTION_MOVE:
-                    int nowX = (int) event.getRawX();
-                    int nowY = (int) event.getRawY();
-                    int movedX = nowX - x;
-                    int movedY = nowY - y;
-                    x = nowX;
-                    y = nowY;
-                    mLayoutParams.x = mLayoutParams.x + movedX;
-                    mLayoutParams.y = mLayoutParams.y + movedY;
-                    mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-                    if ((movedX != 0 || movedY != 0) && isMove == false)
-                        isMove = true;
-                    break;
-                case MotionEvent.ACTION_UP:
-                    return isMove;
-                default:
-                    break;
-            }
-            return false;
+        public void run(int dx, int dy) {
+            mLayoutParams.x = mLayoutParams.x + dx;
+            mLayoutParams.y = mLayoutParams.y + dy;
+            mWindowManager.updateViewLayout(mRoot, mLayoutParams);
         }
-    };
+    });
 
     View.OnClickListener mOpenClickListener = new View.OnClickListener() {
         @Override
@@ -229,8 +204,8 @@ public class FloatPanel extends BasePanel{
                     }
                     Bitmap outmap = null;
                     if (featureDetector <= 0){
-                        List<ToolUtls.Match> reslutlist = ToolUtls.findColors(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50, 38, "#1DA06D"),new ToolUtls.ColorPos(20,10, "#FFFFFF"),new ToolUtls.ColorPos(50,32, "#FFFFFF"),new ToolUtls.ColorPos(30,32, "#FFFFFF")},0.9f,null);
-                        //List<ToolUtls.ImgMatch> reslutlist = ToolUtls.findSubImage(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
+                        //List<ToolUtls.Match> reslutlist = ToolUtls.findColors(bitmap, "#1DA06D", new ToolUtls.ColorPos[]{new ToolUtls.ColorPos(50, 44, "#1DA06D"),new ToolUtls.ColorPos(50, 38, "#1DA06D"),new ToolUtls.ColorPos(20,10, "#FFFFFF"),new ToolUtls.ColorPos(50,32, "#FFFFFF"),new ToolUtls.ColorPos(30,32, "#FFFFFF")},0.9f,null);
+                        List<ToolUtls.ImgMatch> reslutlist = ToolUtls.findSubImage(bitmap, subimage, Imgproc.TM_CCOEFF_NORMED, 0.9f, ToolUtls.MAX_LEVEL_AUTO);
                         outmap = Bitmap.createBitmap(bitmap.getWidth() + subimage.getWidth(), bitmap.getHeight(), Bitmap.Config.ARGB_8888);
                         Canvas cnvs = new Canvas(outmap);
                         Paint paint = new Paint();

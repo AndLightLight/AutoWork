@@ -31,15 +31,15 @@ public class ScreenShotPanel extends BasePanel {
     static final int START_Y= 300;
     static final float ALPHA= 0.1f;
 
-    @UIMake
+    @UIMake(value = R.id.buttonup,touch = "mButtonUpListener")
     Button buttonup;
-    @UIMake
+    @UIMake(value = R.id.buttondown,touch = "mButtonDownListener")
     Button buttondown;
-    @UIMake
+    @UIMake(value = R.id.buttonleft,touch = "mButtonLeftListener")
     Button buttonleft;
-    @UIMake
+    @UIMake(value = R.id.buttonright,touch = "mButtonRightListener")
     Button buttonright;
-    @UIMake
+    @UIMake(value = R.id.mainlayout,touch = "mMainLayoutListener")
     ConstraintLayout mainlayout;
 
     public ScreenShotPanel(Context context) {
@@ -49,13 +49,14 @@ public class ScreenShotPanel extends BasePanel {
 
     @Override
     protected void onShow() {
-        if (mRoot != null)
-            mRoot.setAlpha(ALPHA);
-        mLayoutParams.width = START_WIDTH;
-        mLayoutParams.height = START_HEIGHT;
-        mLayoutParams.x = START_X;
-        mLayoutParams.y = START_Y;
-        mWindowManager.updateViewLayout(mRoot,mLayoutParams);
+        if (mainlayout != null)
+            mainlayout.setAlpha(ALPHA);
+        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+        params.leftMargin = START_X;
+        params.topMargin = START_Y;
+        params.width = START_WIDTH;
+        params.height = START_HEIGHT;
+        mainlayout.requestLayout();
     }
 
     @Override
@@ -71,7 +72,7 @@ public class ScreenShotPanel extends BasePanel {
             mLayoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
         }
         mLayoutParams.format = PixelFormat.RGBA_8888;
-        mLayoutParams.gravity = Gravity.TOP | Gravity.LEFT;
+        mLayoutParams.gravity = Gravity.TOP | Gravity.START;
         mLayoutParams.flags = WindowManager.LayoutParams.FLAG_NOT_TOUCH_MODAL | WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
         mLayoutParams.width = ViewGroup.LayoutParams.MATCH_PARENT;
         mLayoutParams.height = ViewGroup.LayoutParams.MATCH_PARENT;
@@ -79,185 +80,72 @@ public class ScreenShotPanel extends BasePanel {
         LayoutInflater inflater = LayoutInflater.from(mContext);
         mRoot = inflater.inflate(R.layout.functionpanel, null);
         mWindowManager.addView(mRoot, mLayoutParams);
-
-
-
-
-        if (true) return;
-        mRoot = new FrameLayout(mContext);
-        mWindowManager.addView(mRoot, mLayoutParams);
-
-        mRoot.setBackgroundColor(Color.GREEN);
-        mRoot.setAlpha(ALPHA);
-
-        mRoot.setOnTouchListener(new View.OnTouchListener() {
-            private int x;
-            private int y;
-            private int bound = 0;
-
-            public int GetTouchBound(View v, MotionEvent e){
-                int height = v.getHeight();
-                int width = v.getWidth();
-                float posx = e.getX();
-                float posy = e.getY();
-                int xb = v.getWidth()/5;
-                int yb = v.getWidth()/5;
-
-                if (posx < xb){
-                    if (posy <  height - yb){
-                        return 4;
-                    }
-                    else{
-                        return 3;
-                    }
-                }
-                else if (posx > width - xb){
-                    if ( posy > yb){
-                        return 2;
-                    }
-                    else{
-                        return 1;
-                    }
-                }
-                else{
-                    if (posy < yb){
-                        return 1;
-                    }
-                    else if (posy > height - yb){
-                        return 3;
-                    }
-                    else{
-                        return 0;
-                    }
-                }
-            }
-
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        x = (int) event.getRawX();
-                        y = (int) event.getRawY();
-                        bound = GetTouchBound(v,event);
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        int nowX = (int) event.getRawX();
-                        int nowY = (int) event.getRawY();
-                        int movedX = nowX - x;
-                        int movedY = nowY - y;
-                        x = nowX;
-                        y = nowY;
-
-                        int reHeight = mLayoutParams.height;
-                        int reWidth = mLayoutParams.width;
-                        if (bound == 0){
-
-                        }
-                        else if (bound == 1){
-                            reHeight = reHeight - movedY;
-                            movedX = 0;
-                        }
-                        else if (bound == 2){
-                            reWidth = reWidth + movedX;
-                            movedX = 0;
-                            movedY = 0;
-                        }
-                        else if (bound == 3){
-                            reHeight = reHeight + movedY;
-                            movedY = 0;
-                            movedX = 0;
-                        }
-                        else if (bound == 4){
-                            reWidth = reWidth - movedX;
-                            movedY = 0;
-                        }
-                        Log.e(TAG, "onTouch: " + bound + " nowY:" + nowY + " reHeight:" + reHeight );
-                        mLayoutParams.height = reHeight;
-                        mLayoutParams.width = reWidth;
-                        mLayoutParams.x = mLayoutParams.x + movedX;
-                        mLayoutParams.y = mLayoutParams.y + movedY;
-                        mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-                        break;
-                    default:
-                        break;
-                }
-                return false;
-            }
-        });
     }
+
+    PosTouchListener mMainLayoutListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
+        @Override
+        public void run(int dx, int dy) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+            params.leftMargin += dx;
+            params.topMargin += dy;
+            mainlayout.requestLayout();
+        }
+    });
+
+    PosTouchListener mButtonUpListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
+        @Override
+        public void run(int dx, int dy) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+            params.topMargin += dy;
+            params.height -= dy;
+            mainlayout.requestLayout();
+        }
+    });
+
+    PosTouchListener mButtonDownListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
+        @Override
+        public void run(int dx, int dy) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+            params.height += dy;
+            mainlayout.requestLayout();
+        }
+    });
+
+    PosTouchListener mButtonLeftListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
+        @Override
+        public void run(int dx, int dy) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+            params.leftMargin += dx;
+            params.width -= dx;
+            mainlayout.requestLayout();
+        }
+    });
+
+    PosTouchListener mButtonRightListener = new PosTouchListener(new PosTouchListener.PosChangeCB() {
+        @Override
+        public void run(int dx, int dy) {
+            ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
+            params.width += dx;
+            mainlayout.requestLayout();
+        }
+    });
 
     @Override
     protected void onAfterCreate() {
-        mainlayout.setPivotX(1);
-        mainlayout.setPivotY(1);
-        mainlayout.setOnTouchListener(new View.OnTouchListener() {
-            private int x;
-            private int y;
-            @Override
-            public boolean onTouch(View v, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        x = (int) event.getRawX();
-                        y = (int) event.getRawY();
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        int nowX = (int) event.getRawX();
-                        int nowY = (int) event.getRawY();
-                        int movedX = nowX - x;
-                        int movedY = nowY - y;
-                        x = nowX;
-                        y = nowY;
-                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
-                        params.leftMargin += movedX;
-                        params.topMargin += movedY;
-                        mainlayout.requestLayout();
-                        break;
-                    default:
-                        break;
-                }
-                return false;
-            }
-        });
-
-
-        buttonup.setOnTouchListener(new View.OnTouchListener() {
-            private int x;
-            private int y;
-            @Override
-            public boolean onTouch(View view, MotionEvent event) {
-                switch (event.getAction()) {
-                    case MotionEvent.ACTION_DOWN:
-                        x = (int) event.getRawX();
-                        y = (int) event.getRawY();
-                        break;
-                    case MotionEvent.ACTION_MOVE:
-                        int nowX = (int) event.getRawX();
-                        int nowY = (int) event.getRawY();
-                        int movedX = nowX - x;
-                        int movedY = nowY - y;
-                        x = nowX;
-                        y = nowY;
-                        ConstraintLayout.LayoutParams params = (ConstraintLayout.LayoutParams) mainlayout.getLayoutParams();
-                        params.height += movedY;
-                        mainlayout.requestLayout();
-                        break;
-                    default:
-                        break;
-                }
-                return false;
-            }
-        });
+        mainlayout.setClickable(true);
+        mainlayout.setBackgroundColor(Color.GREEN);
+        mainlayout.setAlpha(ALPHA);
     }
 
     public void screenShot(final String path){
         int []location=new int[2];
-        mRoot.getLocationOnScreen(location);
+        mainlayout.getLocationOnScreen(location);
         final int x = location[0];
         final int y = location[1];
-        final int w = mRoot.getWidth();
-        final int h = mRoot.getHeight();
-        mRoot.setAlpha(0);
-        mRoot.postDelayed(new Runnable() {
+        final int w = mainlayout.getWidth();
+        final int h = mainlayout.getHeight();
+        mainlayout.setAlpha(0);
+        mainlayout.postDelayed(new Runnable() {
             @Override
             public void run() {
                 Bitmap ss = mFloatPanelService.snapshotScreen();

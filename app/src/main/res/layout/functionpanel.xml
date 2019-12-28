@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.constraint.ConstraintLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.constraint.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -11,7 +10,7 @@
         android:layout_width="190dp"
         android:layout_height="339dp"
         android:layout_marginStart="96dp"
-        android:layout_marginTop="184dp"
+        android:layout_marginTop="168dp"
         android:background="#808BC34A"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent">
@@ -25,7 +24,8 @@
         android:text="Left"
         app:layout_constraintBottom_toBottomOf="@+id/mainlayout"
         app:layout_constraintEnd_toStartOf="@+id/mainlayout"
-        app:layout_constraintTop_toTopOf="@+id/mainlayout" />
+        app:layout_constraintTop_toTopOf="@+id/mainlayout"
+        app:layout_constraintVertical_bias="0.5" />
 
     <Button
         android:id="@+id/buttonright"
@@ -35,7 +35,7 @@
         app:layout_constraintBottom_toBottomOf="@+id/mainlayout"
         app:layout_constraintStart_toEndOf="@+id/mainlayout"
         app:layout_constraintTop_toTopOf="@+id/mainlayout"
-        app:layout_constraintVertical_bias="0.508" />
+        app:layout_constraintVertical_bias="0.5" />
 
     <Button
         android:id="@+id/buttonup"
@@ -44,7 +44,7 @@
         android:text="Up"
         app:layout_constraintBottom_toTopOf="@+id/mainlayout"
         app:layout_constraintEnd_toStartOf="@+id/buttonright"
-        app:layout_constraintHorizontal_bias="0.542"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/buttonleft" />
 
     <Button
@@ -53,7 +53,8 @@
         android:layout_height="120dp"
         android:text="Down"
         app:layout_constraintEnd_toStartOf="@+id/buttonright"
-        app:layout_constraintHorizontal_bias="0.545"
+        app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toEndOf="@+id/buttonleft"
         app:layout_constraintTop_toBottomOf="@+id/mainlayout" />
+
 </android.support.constraint.ConstraintLayout>

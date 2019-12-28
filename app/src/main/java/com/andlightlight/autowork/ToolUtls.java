@@ -58,7 +58,7 @@ final public class ToolUtls {
     }
 
     public static class Match{
-        public PointF point = null;
+        public PointF point = new PointF();
     }
 
     public static class ImgMatch extends Match {

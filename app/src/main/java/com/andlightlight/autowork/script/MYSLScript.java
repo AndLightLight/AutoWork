@@ -1,15 +1,7 @@
 package com.andlightlight.autowork.script;
-
 import android.graphics.PointF;
-import android.view.accessibility.AccessibilityEvent;
-
-import com.andlightlight.autowork.GestureManager;
 import com.andlightlight.autowork.ScriptInterface;
 import com.andlightlight.autowork.ToolUtls;
-
-import org.opencv.core.Point;
-
-import java.text.BreakIterator;
 import java.util.List;
 
 public class MYSLScript extends ScriptInterface {

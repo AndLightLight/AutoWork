@@ -1,6 +1,8 @@
 package com.andlightlight.autowork;
 
 import android.content.Context;
+import android.support.constraint.ConstraintLayout;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 
@@ -23,6 +25,49 @@ abstract public class BasePanel {
         int value() default -1;
         String click() default "";
         String touch() default "";
+    }
+
+    static class PosTouchListener implements View.OnTouchListener
+    {
+        private int x;
+        private int y;
+        private boolean isMove = false;
+        private PosChangeCB posChangeCB;
+
+        interface PosChangeCB{
+            void run(int dx, int dy);
+        }
+
+        PosTouchListener(PosChangeCB posChangeCB){
+            this.posChangeCB = posChangeCB;
+        }
+        @Override
+        public boolean onTouch(View view, MotionEvent event) {
+            switch (event.getAction()) {
+                case MotionEvent.ACTION_DOWN:
+                    x = (int) event.getRawX();
+                    y = (int) event.getRawY();
+                    break;
+                case MotionEvent.ACTION_MOVE:
+                    int nowX = (int) event.getRawX();
+                    int nowY = (int) event.getRawY();
+                    int movedX = nowX - x;
+                    int movedY = nowY - y;
+                    x = nowX;
+                    y = nowY;
+                    if (posChangeCB != null){
+                        posChangeCB.run(movedX,movedY);
+                    }
+                    if ((movedX != 0 || movedY != 0) && isMove == false)
+                        isMove = true;
+                    break;
+                case MotionEvent.ACTION_UP:
+                    return isMove;
+                default:
+                    break;
+            }
+            return false;
+        }
     }
 
     public BasePanel(Context context){

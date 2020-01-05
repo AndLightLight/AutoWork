@@ -193,6 +193,10 @@ public abstract class ScriptInterface extends Thread {
         return ToolUtls.findSubImageWithFeature(prepareSnapshotScreen(left, top, right, down), mLoadPreImage.get(subpic), mFd, mExtractor, similar, needNum);
     }
 
+    protected List<ToolUtls.ImgMatch> findPic(String subpic, float similar) {
+        return findPic(-1, -1, -1, -1,subpic, Imgproc.TM_CCOEFF_NORMED, similar, ToolUtls.MAX_LEVEL_AUTO);
+    }
+
     protected List<ToolUtls.ImgMatch> findPic(int left, int top, int right, int down, String subpic, float similar) {
         return findPic(left, top, right, down,subpic, Imgproc.TM_CCOEFF_NORMED, similar, ToolUtls.MAX_LEVEL_AUTO);
     }

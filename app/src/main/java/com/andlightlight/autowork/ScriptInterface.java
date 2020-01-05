@@ -1,11 +1,7 @@
 package com.andlightlight.autowork;
 
 import android.accessibilityservice.AccessibilityService;
-import android.app.ActivityManager;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.ApplicationInfo;
-import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Rect;
@@ -217,11 +213,20 @@ public abstract class ScriptInterface extends Thread {
         return ToolUtls.findColors(orcimage, firstColor, points, similar, rect);
     }
 
-    protected void OpenApp(final String appName) {
+    protected void openApp(final String appName) {
         new Handler(Looper.getMainLooper()).post(new Runnable() {
             @Override
             public void run() {
-                FloatPanelService.Instance.startActivity(new Intent(FloatPanelService.Instance,RunAppActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("appName",appName));
+                FloatPanelService.Instance.startActivity(new Intent(FloatPanelService.Instance, AppControlActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("appName",appName).putExtra("action",AppControlActivity.ControlAction.OPEN));
+            }
+        });
+    }
+
+    protected void closeApp(final String appName) {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                FloatPanelService.Instance.startActivity(new Intent(FloatPanelService.Instance, AppControlActivity.class).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK).putExtra("appName",appName).putExtra("action",AppControlActivity.ControlAction.CLOSE));
             }
         });
     }
@@ -263,6 +268,10 @@ public abstract class ScriptInterface extends Thread {
 
     protected void click(String txtPattern) throws InterruptedException {
         click(new String[]{txtPattern}, null, 1, true, false);
+    }
+
+    protected void clickCurrentUI(String txtPattern) throws InterruptedException {
+        clickCurrentUI(new String[]{txtPattern}, null, false);
     }
 
     protected void clickCurrentUI(String txtPattern, final boolean isClickAll) throws InterruptedException {

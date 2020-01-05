@@ -496,7 +496,7 @@ final public class ToolUtls {
         }
     }
 
-    private static void pyrUp(Point p, int level) {
+    private static void pyrUp(PointF p, int level) {
         for (int i = 0; i < level; i++) {
             p.x *= 2;
             p.y *= 2;
@@ -551,7 +551,7 @@ final public class ToolUtls {
                 while (iterator.hasNext()) {
                     ImgMatch match = iterator.next();
                     if (match.similarity >= similar) {
-                        pyrUp(new Point(match.point.x,match.point.y), level);
+                        pyrUp(match.point, level);
                         finalMatchResult.add(match);
                         iterator.remove();
                     }

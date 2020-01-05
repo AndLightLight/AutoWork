@@ -47,6 +47,7 @@ abstract public class BasePanel {
                 case MotionEvent.ACTION_DOWN:
                     x = (int) event.getRawX();
                     y = (int) event.getRawY();
+                    isMove = false;
                     break;
                 case MotionEvent.ACTION_MOVE:
                     int nowX = (int) event.getRawX();

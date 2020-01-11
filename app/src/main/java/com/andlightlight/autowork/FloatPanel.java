@@ -20,6 +20,7 @@ import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 
+import com.andlightlight.autowork.script.DDSScript;
 import com.andlightlight.autowork.script.MYSLScript;
 
 import org.opencv.android.Utils;
@@ -271,7 +272,7 @@ public class FloatPanel extends BasePanel{
         @Override
         public void onClick(View v) {
             if (mIsStart == false){
-                script = new MYSLScript();
+                script = new DDSScript();
                 script.start(new Runnable() {
                     @Override
                     public void run() {

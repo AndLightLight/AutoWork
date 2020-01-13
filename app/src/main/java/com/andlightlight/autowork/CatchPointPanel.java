@@ -25,7 +25,7 @@ public class CatchPointPanel extends BasePanel {
 
     public CatchPointPanel(Context context) {
         super(context);
-        mFloatPanelService = (FloatPanelService) context;
+        //mFloatPanelService = (FloatPanelService) context;
     }
 
     @Override

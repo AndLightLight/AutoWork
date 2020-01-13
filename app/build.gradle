@@ -1,6 +1,20 @@
 apply plugin: 'com.android.application'
 
 android {
+    signingConfigs {
+        debug {
+            storeFile file('F:\\F\\AutoWork\\app\\awks.jks')
+            storePassword '123456'
+            keyAlias = 'awks'
+            keyPassword '123456'
+        }
+        release {
+            storeFile file('F:\\F\\AutoWork\\app\\awks.jks')
+            storePassword '123456'
+            keyAlias = 'awks'
+            keyPassword '123456'
+        }
+    }
     compileSdkVersion 28
     defaultConfig {
         applicationId "com.andlightlight.autowork"

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.IntentFilter;
 import android.media.projection.MediaProjectionManager;
 import android.net.Uri;
+import android.os.Build;
 import android.provider.Settings;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
@@ -113,17 +114,21 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void startFloatPanleService(View view){
-        if (FloatPanelService.isStarted) {
-            return;
-        }
-        if (!Settings.canDrawOverlays(this)) {
-            Toast.makeText(this, "当前无权限，请授权", Toast.LENGTH_SHORT);
-            startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())), OverLay);
-        } else {
-            if (mMediaProjectionData == null)
-                startScreenCaptureIntentActivity();
-            else
-                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+//        if (FloatPanelService.isStarted) {
+//            return;
+//        }
+//        if (!Settings.canDrawOverlays(this)) {
+//            Toast.makeText(this, "当前无权限，请授权", Toast.LENGTH_SHORT);
+//            startActivityForResult(new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName())), OverLay);
+//        } else {
+//            if (mMediaProjectionData == null)
+//                startScreenCaptureIntentActivity();
+//            else
+//                startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+//        }
+        Intent backintent = new Intent(getApplicationContext(), TestService.class);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            startForegroundService(backintent);
         }
     }
 

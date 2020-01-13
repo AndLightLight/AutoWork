@@ -44,7 +44,7 @@ public class ScreenShotPanel extends BasePanel {
 
     public ScreenShotPanel(Context context) {
         super(context);
-        mFloatPanelService = (FloatPanelService) context;
+        //mFloatPanelService = (FloatPanelService) context;
     }
 
     @Override

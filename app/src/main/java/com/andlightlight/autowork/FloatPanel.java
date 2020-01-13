@@ -14,6 +14,7 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
@@ -60,9 +61,9 @@ public class FloatPanel extends BasePanel{
     Button bt2;
     @UIMake(value = R.id.button3,click = "mJieTuClickListener")
     Button bt3;
-    @UIMake(value = R.id.button4,click = "mBoFangClickListener")
+    @UIMake(value = R.id.button4)
     Button bt4;
-    @UIMake(value = R.id.button5,click = "mFocuseClickListener")
+    @UIMake(value = R.id.button5)
     Button bt5;
     @UIMake(value = R.id.button6,click = "mRunClickListener")
     Button bt6;
@@ -89,7 +90,7 @@ public class FloatPanel extends BasePanel{
 
     public FloatPanel(Context context) {
         super(context);
-        mFloatPanelService = (FloatPanelService) context;
+        //mFloatPanelService = (FloatPanelService) context;
         Instance = this;
     }
 
@@ -127,22 +128,6 @@ public class FloatPanel extends BasePanel{
         }
     };
 
-    View.OnClickListener mFocuseClickListener = new View.OnClickListener() {
-        boolean isFocuse = false;
-
-        @Override
-        public void onClick(View v) {
-            if (isFocuse) {
-                mLayoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-                mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-            } else {
-                mLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
-                mWindowManager.updateViewLayout(mRoot, mLayoutParams);
-            }
-            isFocuse = isFocuse == false;
-        }
-    };
-
     View.OnClickListener mRecordClickListener = new View.OnClickListener() {
         boolean mIsRecord = false;
         GestureRecordPanel mPanel = new GestureRecordPanel(mContext);
@@ -154,13 +139,6 @@ public class FloatPanel extends BasePanel{
             else
                 mPanel.hide();
             mIsRecord = mIsRecord == false;
-        }
-    };
-
-    View.OnClickListener mBoFangClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-
         }
     };
 
@@ -313,6 +291,7 @@ public class FloatPanel extends BasePanel{
             public void run() {
                 mLayoutParams.width = bt0.getWidth();
                 mLayoutParams.height = bt0.getHeight();
+                mLayoutParams.flags |= WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
                 mWindowManager.updateViewLayout(mRoot, mLayoutParams);
                 mMax = false;
             }
@@ -335,7 +314,7 @@ public class FloatPanel extends BasePanel{
     protected void onCreate() {
         if (Settings.canDrawOverlays(mContext)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                mLayoutParams.type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY;
+                mLayoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
             } else {
                 mLayoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
             }
@@ -350,6 +329,16 @@ public class FloatPanel extends BasePanel{
             LayoutInflater inflater = LayoutInflater.from(mContext);
             mRoot = inflater.inflate(R.layout.floatpanel_main, null);
             mWindowManager.addView(mRoot, mLayoutParams);
+            ((AWConstraintLayout)mRoot).setDispatchTouchEventListener(new AWConstraintLayout.DispatchTouchEventListener() {
+                @Override
+                public void OnDispatchTouch(View view, MotionEvent ev) {
+                    boolean hasf = view.hasFocus();
+                    if (hasf) {
+                        mLayoutParams.flags &= ~WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE;
+                        mWindowManager.updateViewLayout(mRoot, mLayoutParams);
+                    }
+                }
+            });
         }
     }
 

@@ -33,7 +33,6 @@
             android:name=".FloatPanelService"
             android:exported="true"
             android:label="AutoWork"
-            android:process=":test"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
             <intent-filter>
                 <action android:name="android.accessibilityservice.AccessibilityService" />

@@ -90,7 +90,7 @@ public class FloatPanel extends BasePanel{
 
     public FloatPanel(Context context) {
         super(context);
-        //mFloatPanelService = (FloatPanelService) context;
+        mFloatPanelService = (FloatPanelService) context;
         Instance = this;
     }
 
@@ -250,7 +250,14 @@ public class FloatPanel extends BasePanel{
         @Override
         public void onClick(View v) {
             if (mIsStart == false){
-                script = new DDSScript();
+                try {
+                    String scripname = "com.andlightlight.autowork.script." + et6.getText().toString();
+                    script = (ScriptInterface) Class.forName(scripname).newInstance();
+                } catch (Exception e) {
+                    script = new DDSScript();
+                    e.printStackTrace();
+                }
+
                 script.start(new Runnable() {
                     @Override
                     public void run() {
@@ -314,7 +321,7 @@ public class FloatPanel extends BasePanel{
     protected void onCreate() {
         if (Settings.canDrawOverlays(mContext)) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                mLayoutParams.type = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+                mLayoutParams.type = WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY;
             } else {
                 mLayoutParams.type = WindowManager.LayoutParams.TYPE_PHONE;
             }
